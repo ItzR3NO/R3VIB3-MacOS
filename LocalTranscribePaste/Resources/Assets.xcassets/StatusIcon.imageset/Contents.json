@@ -1,0 +1,20 @@
+{
+  "images" : [
+    {
+      "filename" : "status_16.png",
+      "idiom" : "mac",
+      "scale" : "1x",
+      "size" : "16x16"
+    },
+    {
+      "filename" : "status_32.png",
+      "idiom" : "mac",
+      "scale" : "2x",
+      "size" : "16x16"
+    }
+  ],
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  }
+}

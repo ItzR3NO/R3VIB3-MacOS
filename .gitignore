@@ -1,0 +1,26 @@
+# macOS
+.DS_Store
+
+# Xcode
+DerivedData/
+build/
+*.xcuserstate
+*.xcuserdata/
+*.xccheckout
+*.xcscmblueprint
+
+# SwiftPM
+.build/
+Packages/
+Package.resolved
+
+# Logs
+*.log
+
+# App artifacts
+*.app
+*.dSYM
+
+# User settings
+*.swp
+*.swo

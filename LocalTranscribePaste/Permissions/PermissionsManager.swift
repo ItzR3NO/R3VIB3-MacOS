@@ -1,5 +1,6 @@
 import Foundation
 import AVFoundation
+import AVFAudio
 import ApplicationServices
 import AppKit
 
@@ -12,10 +13,25 @@ enum MicrophoneAuthorizationStatus {
 
 final class PermissionsManager {
     var isMicrophoneAuthorized: Bool {
-        AVCaptureDevice.authorizationStatus(for: .audio) == .authorized
+        if #available(macOS 14.0, *) {
+            return AVAudioApplication.shared.recordPermission == .granted
+        }
+        return AVCaptureDevice.authorizationStatus(for: .audio) == .authorized
     }
 
     var microphoneStatus: MicrophoneAuthorizationStatus {
+        if #available(macOS 14.0, *) {
+            switch AVAudioApplication.shared.recordPermission {
+            case .granted:
+                return .authorized
+            case .denied:
+                return .denied
+            case .undetermined:
+                return .notDetermined
+            @unknown default:
+                return .restricted
+            }
+        }
         switch AVCaptureDevice.authorizationStatus(for: .audio) {
         case .authorized:
             return .authorized
@@ -35,8 +51,18 @@ final class PermissionsManager {
     }
 
     func requestMicrophoneAccess(completion: @escaping (Bool) -> Void) {
+        NSApp.activate(ignoringOtherApps: true)
+        if #available(macOS 14.0, *) {
+            AVAudioApplication.requestRecordPermission { granted in
+                Log.permissions.info("Microphone permission granted (AVAudioApplication): \(granted)")
+                DispatchQueue.main.async {
+                    completion(granted)
+                }
+            }
+            return
+        }
         AVCaptureDevice.requestAccess(for: .audio) { granted in
-            Log.permissions.info("Microphone permission granted: \(granted)")
+            Log.permissions.info("Microphone permission granted (AVCaptureDevice): \(granted)")
             DispatchQueue.main.async {
                 completion(granted)
             }

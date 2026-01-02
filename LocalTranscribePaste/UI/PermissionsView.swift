@@ -17,16 +17,16 @@ struct PermissionsView: View {
 
             GroupBox(label: Text("Actions")) {
                 VStack(alignment: .leading, spacing: 12) {
-                    if micStatus == .notDetermined {
-                        Button("Request Microphone Permission") {
-                            AppState.shared.permissions.requestMicrophoneAccess { _ in
-                                refresh()
+                    Button("Request Microphone Permission") {
+                        AppState.shared.permissions.requestMicrophoneAccess { granted in
+                            refresh()
+                            if !granted {
+                                AppState.shared.permissions.openMicrophoneSettings()
                             }
                         }
-                    } else if micStatus == .denied || micStatus == .restricted {
-                        Button("Open System Settings (Microphone)") {
-                            AppState.shared.permissions.openMicrophoneSettings()
-                        }
+                    }
+                    Button("Open System Settings (Microphone)") {
+                        AppState.shared.permissions.openMicrophoneSettings()
                     }
                     Button("Request Accessibility Permission") {
                         AppState.shared.permissions.requestAccessibilityAccess()

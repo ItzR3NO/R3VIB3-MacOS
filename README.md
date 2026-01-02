@@ -1,6 +1,8 @@
 # R3VIB3
 
-Local-only macOS menu bar app for microphone dictation with offline transcription (whisper.cpp) and manual paste.
+![R3VIB3 Header](docs/R3VIBEHeader.jpeg)
+
+Local-only macOS menu bar dictation app designed for seamless transcription across your local Mac and remote desktop sessions. Most dictation tools don’t pace or paste reliably into RDP clients — R3VIB3 does.
 
 ## Build and run
 1. Open `LocalTranscribePaste/LocalTranscribePaste.xcodeproj` in Xcode.

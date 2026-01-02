@@ -17,42 +17,30 @@ final class PermissionsManager {
     }
 
     var microphoneStatus: MicrophoneAuthorizationStatus {
-        let captureStatus: MicrophoneAuthorizationStatus
-        switch AVCaptureDevice.authorizationStatus(for: .audio) {
-        case .authorized:
-            captureStatus = .authorized
-        case .denied:
-            captureStatus = .denied
-        case .restricted:
-            captureStatus = .restricted
-        case .notDetermined:
-            captureStatus = .notDetermined
-        @unknown default:
-            captureStatus = .restricted
-        }
-        var audioStatus: MicrophoneAuthorizationStatus = .restricted
         if #available(macOS 14.0, *) {
             switch AVAudioApplication.shared.recordPermission {
             case .granted:
-                audioStatus = .authorized
+                return .authorized
             case .denied:
-                audioStatus = .denied
+                return .denied
             case .undetermined:
-                audioStatus = .notDetermined
+                return .notDetermined
             @unknown default:
-                audioStatus = .restricted
+                return .restricted
             }
         }
-        if captureStatus == .authorized || audioStatus == .authorized {
+        switch AVCaptureDevice.authorizationStatus(for: .audio) {
+        case .authorized:
             return .authorized
-        }
-        if captureStatus == .denied || audioStatus == .denied {
+        case .denied:
             return .denied
-        }
-        if captureStatus == .restricted || audioStatus == .restricted {
+        case .restricted:
+            return .restricted
+        case .notDetermined:
+            return .notDetermined
+        @unknown default:
             return .restricted
         }
-        return .notDetermined
     }
 
     var isAccessibilityAuthorized: Bool {
@@ -79,25 +67,7 @@ final class PermissionsManager {
     }
 
     func forceMicrophonePrompt(completion: @escaping (Bool) -> Void) {
-        NSApp.activate(ignoringOtherApps: true)
-        let engine = AVAudioEngine()
-        let input = engine.inputNode
-        let format = input.outputFormat(forBus: 0)
-        input.installTap(onBus: 0, bufferSize: 256, format: format) { _, _ in }
-        do {
-            try engine.start()
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
-                input.removeTap(onBus: 0)
-                engine.stop()
-                engine.reset()
-                let authorized = self.isMicrophoneAuthorized
-                Log.permissions.info("Microphone prompt probe complete. Authorized: \(authorized)")
-                completion(authorized)
-            }
-        } catch {
-            Log.permissions.error("Microphone prompt probe failed: \(error.localizedDescription)")
-            completion(false)
-        }
+        requestMicrophoneAccess(completion: completion)
     }
 
     func openMicrophoneSettings() {

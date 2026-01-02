@@ -120,6 +120,12 @@ final class AppState: ObservableObject {
     }
 
     func toggleDictation() {
+        if !Thread.isMainThread {
+            DispatchQueue.main.async { [weak self] in
+                self?.toggleDictation()
+            }
+            return
+        }
         if isRecording {
             stopRecordingAndTranscribe()
         } else {
@@ -128,6 +134,12 @@ final class AppState: ObservableObject {
     }
 
     private func startRecording() {
+        if !Thread.isMainThread {
+            DispatchQueue.main.async { [weak self] in
+                self?.startRecording()
+            }
+            return
+        }
         guard permissions.isMicrophoneAuthorized else {
             statusBarController.showPermissions()
             Log.audio.warning("Microphone permission missing")
@@ -151,6 +163,12 @@ final class AppState: ObservableObject {
     }
 
     private func stopRecordingAndTranscribe() {
+        if !Thread.isMainThread {
+            DispatchQueue.main.async { [weak self] in
+                self?.stopRecordingAndTranscribe()
+            }
+            return
+        }
         do {
             let audioURL = try audioCapture.stopRecording()
             isRecording = false
@@ -167,6 +185,12 @@ final class AppState: ObservableObject {
     }
 
     private func startHoldRecording() {
+        if !Thread.isMainThread {
+            DispatchQueue.main.async { [weak self] in
+                self?.startHoldRecording()
+            }
+            return
+        }
         guard !isRecording else { return }
         guard permissions.isMicrophoneAuthorized else {
             statusBarController.showPermissions()
@@ -191,6 +215,12 @@ final class AppState: ObservableObject {
     }
 
     private func stopHoldRecording() {
+        if !Thread.isMainThread {
+            DispatchQueue.main.async { [weak self] in
+                self?.stopHoldRecording()
+            }
+            return
+        }
         guard isRecording, activeRecordingMode == .hold else { return }
         stopRecordingAndTranscribe()
         activeRecordingMode = .none

@@ -48,6 +48,7 @@ xcodebuild -exportArchive \
   -exportOptionsPlist "$BUILD_ROOT/ExportOptions.plist"
 
 APP_PATH="$EXPORT_PATH/${APP_NAME}.app"
+UPLOAD_ZIP="$BUILD_ROOT/${APP_NAME}-notary.zip"
 
 if [ ! -d "$APP_PATH" ]; then
   echo "Export failed: app not found at $APP_PATH"
@@ -61,7 +62,8 @@ if [ -z "${NOTARY_PROFILE:-}" ]; then
   exit 1
 fi
 
-xcrun notarytool submit "$APP_PATH" --keychain-profile "$NOTARY_PROFILE" --wait
+ /usr/bin/ditto -c -k --sequesterRsrc --keepParent "$APP_PATH" "$UPLOAD_ZIP"
+xcrun notarytool submit "$UPLOAD_ZIP" --keychain-profile "$NOTARY_PROFILE" --wait
 xcrun stapler staple "$APP_PATH"
 
 /usr/bin/ditto -c -k --sequesterRsrc --keepParent "$APP_PATH" "$ZIP_PATH"

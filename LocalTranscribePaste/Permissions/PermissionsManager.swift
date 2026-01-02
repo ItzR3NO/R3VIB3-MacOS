@@ -13,37 +13,46 @@ enum MicrophoneAuthorizationStatus {
 
 final class PermissionsManager {
     var isMicrophoneAuthorized: Bool {
-        if #available(macOS 14.0, *) {
-            return AVAudioApplication.shared.recordPermission == .granted
-        }
-        return AVCaptureDevice.authorizationStatus(for: .audio) == .authorized
+        return microphoneStatus == .authorized
     }
 
     var microphoneStatus: MicrophoneAuthorizationStatus {
+        let captureStatus: MicrophoneAuthorizationStatus
+        switch AVCaptureDevice.authorizationStatus(for: .audio) {
+        case .authorized:
+            captureStatus = .authorized
+        case .denied:
+            captureStatus = .denied
+        case .restricted:
+            captureStatus = .restricted
+        case .notDetermined:
+            captureStatus = .notDetermined
+        @unknown default:
+            captureStatus = .restricted
+        }
+        var audioStatus: MicrophoneAuthorizationStatus = .restricted
         if #available(macOS 14.0, *) {
             switch AVAudioApplication.shared.recordPermission {
             case .granted:
-                return .authorized
+                audioStatus = .authorized
             case .denied:
-                return .denied
+                audioStatus = .denied
             case .undetermined:
-                return .notDetermined
+                audioStatus = .notDetermined
             @unknown default:
-                return .restricted
+                audioStatus = .restricted
             }
         }
-        switch AVCaptureDevice.authorizationStatus(for: .audio) {
-        case .authorized:
+        if captureStatus == .authorized || audioStatus == .authorized {
             return .authorized
-        case .denied:
+        }
+        if captureStatus == .denied || audioStatus == .denied {
             return .denied
-        case .restricted:
-            return .restricted
-        case .notDetermined:
-            return .notDetermined
-        @unknown default:
+        }
+        if captureStatus == .restricted || audioStatus == .restricted {
             return .restricted
         }
+        return .notDetermined
     }
 
     var isAccessibilityAuthorized: Bool {
@@ -69,9 +78,39 @@ final class PermissionsManager {
         }
     }
 
+    func forceMicrophonePrompt(completion: @escaping (Bool) -> Void) {
+        NSApp.activate(ignoringOtherApps: true)
+        let engine = AVAudioEngine()
+        let input = engine.inputNode
+        let format = input.outputFormat(forBus: 0)
+        input.installTap(onBus: 0, bufferSize: 256, format: format) { _, _ in }
+        do {
+            try engine.start()
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
+                input.removeTap(onBus: 0)
+                engine.stop()
+                engine.reset()
+                let authorized = self.isMicrophoneAuthorized
+                Log.permissions.info("Microphone prompt probe complete. Authorized: \(authorized)")
+                completion(authorized)
+            }
+        } catch {
+            Log.permissions.error("Microphone prompt probe failed: \(error.localizedDescription)")
+            completion(false)
+        }
+    }
+
     func openMicrophoneSettings() {
-        if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Microphone") {
-            NSWorkspace.shared.open(url)
+        NSApp.activate(ignoringOtherApps: true)
+        let appURL = URL(fileURLWithPath: "/System/Applications/System Settings.app")
+        let config = NSWorkspace.OpenConfiguration()
+        NSWorkspace.shared.openApplication(at: appURL, configuration: config) { _, _ in
+            if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Microphone") {
+                NSWorkspace.shared.open(url)
+                return
+            }
+            let fallback = URL(fileURLWithPath: "/System/Library/PreferencePanes/Security.prefPane")
+            NSWorkspace.shared.open(fallback)
         }
     }
 
@@ -82,6 +121,11 @@ final class PermissionsManager {
     }
 
     func logCurrentStatus() {
-        Log.permissions.info("Permission status - mic: \(self.isMicrophoneAuthorized), accessibility: \(self.isAccessibilityAuthorized)")
+        let captureStatus = AVCaptureDevice.authorizationStatus(for: .audio)
+        var audioStatus: String = "n/a"
+        if #available(macOS 14.0, *) {
+            audioStatus = String(describing: AVAudioApplication.shared.recordPermission)
+        }
+        Log.permissions.info("Permission status - mic:\(self.isMicrophoneAuthorized) capture:\(String(describing: captureStatus)) avfaudio:\(audioStatus) accessibility:\(self.isAccessibilityAuthorized)")
     }
 }

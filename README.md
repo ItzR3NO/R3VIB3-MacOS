@@ -54,6 +54,25 @@ Workflow:
 ## Launch at login
 In Settings, enable **Launch at login** to start R3VIB3 automatically when you sign in.
 
+## Release (Developer ID + notarization)
+This project includes a release script for notarized builds.
+
+### One-time setup
+Create a notarytool profile:
+```bash
+xcrun notarytool store-credentials R3VIB3_Notary \
+  --apple-id you@apple.com \
+  --team-id TEAM_ID \
+  --password app-specific-password
+```
+
+### Build + notarize
+```bash
+NOTARY_PROFILE=R3VIB3_Notary ./scripts/release.sh
+```
+
+The script outputs a notarized app and zip in `build/`, plus a SHA-256 checksum.
+
 ## Remote desktop notes (Microsoft Remote Desktop)
 - Enable clipboard sharing in the RDP client.
 - If Cmd+V does not paste into the remote session, switch to **Ctrl+V** in Settings.

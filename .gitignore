@@ -24,3 +24,6 @@ Package.resolved
 # User settings
 *.swp
 *.swo
+
+# Local agent notes
+AGENTS.md

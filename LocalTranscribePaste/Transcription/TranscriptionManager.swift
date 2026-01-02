@@ -101,7 +101,7 @@ final class TranscriptionManager {
             monoBuffer.frameLength = inputBuffer.frameLength
             let dest = monoBuffer.floatChannelData![0]
             let src = floatData[maxChannel]
-            dest.assign(from: src, count: frameCount)
+            dest.update(from: src, count: frameCount)
             return monoBuffer
         }
 
@@ -131,7 +131,7 @@ final class TranscriptionManager {
             monoBuffer.frameLength = inputBuffer.frameLength
             let dest = monoBuffer.int16ChannelData![0]
             let src = int16Data[maxChannel]
-            dest.assign(from: src, count: frameCount)
+            dest.update(from: src, count: frameCount)
             return monoBuffer
         }
 

@@ -1,4 +1,5 @@
 import SwiftUI
+import UniformTypeIdentifiers
 
 struct SettingsView: View {
     @ObservedObject private var settings = AppState.shared.settings
@@ -127,7 +128,7 @@ struct SettingsView: View {
         let panel = NSOpenPanel()
         panel.allowsMultipleSelection = false
         panel.canChooseDirectories = false
-        panel.allowedFileTypes = ["bin"]
+        panel.allowedContentTypes = [UTType(filenameExtension: "bin")].compactMap { $0 }
         if panel.runModal() == .OK, let url = panel.url {
             settings.modelPath = url.path
         }

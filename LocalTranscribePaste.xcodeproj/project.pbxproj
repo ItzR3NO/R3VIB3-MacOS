@@ -1,0 +1,400 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 60;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		000000000000000000000101 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000001 /* AppDelegate.swift */; };
+		000000000000000000000102 /* LocalTranscribePasteApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000002 /* LocalTranscribePasteApp.swift */; };
+		000000000000000000000103 /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000003 /* AppState.swift */; };
+		000000000000000000000104 /* Logging.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000004 /* Logging.swift */; };
+		000000000000000000000105 /* SettingsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000005 /* SettingsStore.swift */; };
+		000000000000000000000106 /* AudioCaptureManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000006 /* AudioCaptureManager.swift */; };
+		000000000000000000000107 /* TranscriptionEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000007 /* TranscriptionEngine.swift */; };
+		000000000000000000000108 /* TranscriptionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000008 /* TranscriptionManager.swift */; };
+		000000000000000000000109 /* WhisperCLITranscriber.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000009 /* WhisperCLITranscriber.swift */; };
+		00000000000000000000010A /* Hotkey.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000000A /* Hotkey.swift */; };
+		00000000000000000000010B /* HotkeyManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000000B /* HotkeyManager.swift */; };
+		00000000000000000000010C /* PasteManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000000C /* PasteManager.swift */; };
+		00000000000000000000010D /* PermissionsManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000000D /* PermissionsManager.swift */; };
+		00000000000000000000010E /* StatusBarController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000000E /* StatusBarController.swift */; };
+		00000000000000000000010F /* TranscriptPopoverView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000000F /* TranscriptPopoverView.swift */; };
+		000000000000000000000110 /* SettingsWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000010 /* SettingsWindowController.swift */; };
+		000000000000000000000111 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000011 /* SettingsView.swift */; };
+		000000000000000000000112 /* PermissionsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000012 /* PermissionsView.swift */; };
+		000000000000000000000113 /* HotkeyRecorderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000013 /* HotkeyRecorderView.swift */; };
+		000000000000000000000114 /* whisper/whisper-cli in Resources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000016 /* whisper/whisper-cli */; };
+		000000000000000000000115 /* AudioDeviceManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000017 /* AudioDeviceManager.swift */; };
+		000000000000000000000116 /* HoldHotkeyManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000018 /* HoldHotkeyManager.swift */; };
+		000000000000000000000117 /* RecordingIndicatorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000019 /* RecordingIndicatorView.swift */; };
+		000000000000000000000118 /* RecordingIndicatorWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000001A /* RecordingIndicatorWindowController.swift */; };
+		000000000000000000000120 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000121 /* Assets.xcassets */; };
+		000000000000000000000123 /* LaunchAtLoginManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000122 /* LaunchAtLoginManager.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		000000000000000000000001 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		000000000000000000000002 /* LocalTranscribePasteApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalTranscribePasteApp.swift; sourceTree = "<group>"; };
+		000000000000000000000003 /* AppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppState.swift; sourceTree = "<group>"; };
+		000000000000000000000004 /* Logging.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Logging.swift; sourceTree = "<group>"; };
+		000000000000000000000005 /* SettingsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsStore.swift; sourceTree = "<group>"; };
+		000000000000000000000006 /* AudioCaptureManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioCaptureManager.swift; sourceTree = "<group>"; };
+		000000000000000000000007 /* TranscriptionEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranscriptionEngine.swift; sourceTree = "<group>"; };
+		000000000000000000000008 /* TranscriptionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranscriptionManager.swift; sourceTree = "<group>"; };
+		000000000000000000000009 /* WhisperCLITranscriber.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WhisperCLITranscriber.swift; sourceTree = "<group>"; };
+		00000000000000000000000A /* Hotkey.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Hotkey.swift; sourceTree = "<group>"; };
+		00000000000000000000000B /* HotkeyManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HotkeyManager.swift; sourceTree = "<group>"; };
+		00000000000000000000000C /* PasteManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PasteManager.swift; sourceTree = "<group>"; };
+		00000000000000000000000D /* PermissionsManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionsManager.swift; sourceTree = "<group>"; };
+		00000000000000000000000E /* StatusBarController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusBarController.swift; sourceTree = "<group>"; };
+		00000000000000000000000F /* TranscriptPopoverView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranscriptPopoverView.swift; sourceTree = "<group>"; };
+		000000000000000000000010 /* SettingsWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsWindowController.swift; sourceTree = "<group>"; };
+		000000000000000000000011 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		000000000000000000000012 /* PermissionsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionsView.swift; sourceTree = "<group>"; };
+		000000000000000000000013 /* HotkeyRecorderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HotkeyRecorderView.swift; sourceTree = "<group>"; };
+		000000000000000000000014 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		000000000000000000000015 /* LocalTranscribePaste.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = LocalTranscribePaste.entitlements; sourceTree = "<group>"; };
+		000000000000000000000016 /* whisper/whisper-cli */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.executable"; path = "whisper/whisper-cli"; sourceTree = "<group>"; };
+		000000000000000000000017 /* AudioDeviceManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioDeviceManager.swift; sourceTree = "<group>"; };
+		000000000000000000000018 /* HoldHotkeyManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HoldHotkeyManager.swift; sourceTree = "<group>"; };
+		000000000000000000000019 /* RecordingIndicatorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordingIndicatorView.swift; sourceTree = "<group>"; };
+		00000000000000000000001A /* RecordingIndicatorWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordingIndicatorWindowController.swift; sourceTree = "<group>"; };
+		000000000000000000000121 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		000000000000000000000122 /* LaunchAtLoginManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaunchAtLoginManager.swift; sourceTree = "<group>"; };
+		000000000000000000000600 /* R3VIB3.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; path = R3VIB3.app; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		000000000000000000000200 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		000000000000000000000300 /* LocalTranscribePaste */ = {
+			isa = PBXGroup;
+			children = (
+				000000000000000000000001 /* AppDelegate.swift */,
+				000000000000000000000002 /* LocalTranscribePasteApp.swift */,
+				000000000000000000000003 /* AppState.swift */,
+				000000000000000000000004 /* Logging.swift */,
+				000000000000000000000005 /* SettingsStore.swift */,
+				000000000000000000000400 /* AudioCapture */,
+				000000000000000000000401 /* Transcription */,
+				000000000000000000000402 /* Hotkeys */,
+				000000000000000000000403 /* Paste */,
+				000000000000000000000404 /* Permissions */,
+				000000000000000000000405 /* UI */,
+				000000000000000000000406 /* Resources */,
+				000000000000000000000015 /* LocalTranscribePaste.entitlements */,
+			);
+			path = LocalTranscribePaste;
+			sourceTree = "<group>";
+		};
+		000000000000000000000400 /* AudioCapture */ = {
+			isa = PBXGroup;
+			children = (
+				000000000000000000000006 /* AudioCaptureManager.swift */,
+				000000000000000000000017 /* AudioDeviceManager.swift */,
+			);
+			path = AudioCapture;
+			sourceTree = "<group>";
+		};
+		000000000000000000000401 /* Transcription */ = {
+			isa = PBXGroup;
+			children = (
+				000000000000000000000007 /* TranscriptionEngine.swift */,
+				000000000000000000000008 /* TranscriptionManager.swift */,
+				000000000000000000000009 /* WhisperCLITranscriber.swift */,
+			);
+			path = Transcription;
+			sourceTree = "<group>";
+		};
+		000000000000000000000402 /* Hotkeys */ = {
+			isa = PBXGroup;
+			children = (
+				00000000000000000000000A /* Hotkey.swift */,
+				00000000000000000000000B /* HotkeyManager.swift */,
+				000000000000000000000018 /* HoldHotkeyManager.swift */,
+			);
+			path = Hotkeys;
+			sourceTree = "<group>";
+		};
+		000000000000000000000403 /* Paste */ = {
+			isa = PBXGroup;
+			children = (
+				00000000000000000000000C /* PasteManager.swift */,
+			);
+			path = Paste;
+			sourceTree = "<group>";
+		};
+		000000000000000000000404 /* Permissions */ = {
+			isa = PBXGroup;
+			children = (
+				00000000000000000000000D /* PermissionsManager.swift */,
+				000000000000000000000122 /* LaunchAtLoginManager.swift */,
+			);
+			path = Permissions;
+			sourceTree = "<group>";
+		};
+		000000000000000000000405 /* UI */ = {
+			isa = PBXGroup;
+			children = (
+				00000000000000000000000E /* StatusBarController.swift */,
+				00000000000000000000000F /* TranscriptPopoverView.swift */,
+				000000000000000000000010 /* SettingsWindowController.swift */,
+				000000000000000000000011 /* SettingsView.swift */,
+				000000000000000000000012 /* PermissionsView.swift */,
+				000000000000000000000013 /* HotkeyRecorderView.swift */,
+				000000000000000000000019 /* RecordingIndicatorView.swift */,
+				00000000000000000000001A /* RecordingIndicatorWindowController.swift */,
+			);
+			path = UI;
+			sourceTree = "<group>";
+		};
+		000000000000000000000406 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				000000000000000000000014 /* Info.plist */,
+				000000000000000000000016 /* whisper/whisper-cli */,
+				000000000000000000000121 /* Assets.xcassets */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+		000000000000000000000500 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				000000000000000000000600 /* R3VIB3.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		000000000000000000000700 /* LocalTranscribePaste */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 000000000000000000000701 /* Build configuration list for PBXNativeTarget "LocalTranscribePaste" */;
+			buildPhases = (
+				000000000000000000000800 /* Sources */,
+				000000000000000000000801 /* Resources */,
+				000000000000000000000124 /* Sign Whisper CLI */,
+				000000000000000000000200 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = LocalTranscribePaste;
+			productName = R3VIB3;
+			productReference = 000000000000000000000600 /* R3VIB3.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		000000000000000000000900 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastUpgradeCheck = 1600;
+				TargetAttributes = {
+					000000000000000000000700 = {
+						CreatedOnToolsVersion = 15.0;
+					};
+				};
+			};
+			buildConfigurationList = 000000000000000000000901 /* Build configuration list for PBXProject "LocalTranscribePaste" */;
+			compatibilityVersion = "Xcode 15.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = 000000000000000000000300 /* LocalTranscribePaste */;
+			productRefGroup = 000000000000000000000500 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				000000000000000000000700 /* LocalTranscribePaste */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		000000000000000000000801 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				000000000000000000000114 /* whisper/whisper-cli in Resources */,
+				000000000000000000000120 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		000000000000000000000124 /* Sign Whisper CLI */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/whisper-cli",
+			);
+			name = "Sign Whisper CLI";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(DERIVED_FILE_DIR)/SignWhisperCLI.stamp",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "if [ \"${CODE_SIGNING_ALLOWED}\" = \"YES\" ]; then\n  WHISPER_CLI=\"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/whisper-cli\"\n  if [ -f \"${WHISPER_CLI}\" ]; then\n    /usr/bin/codesign --force --options runtime --sign \"${CODE_SIGN_IDENTITY}\" \"${WHISPER_CLI}\"\n  fi\nfi\n\n/usr/bin/touch \"${DERIVED_FILE_DIR}/SignWhisperCLI.stamp\"\n";
+		};
+/* End PBXShellScriptBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		000000000000000000000800 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				000000000000000000000101 /* AppDelegate.swift in Sources */,
+				000000000000000000000102 /* LocalTranscribePasteApp.swift in Sources */,
+				000000000000000000000103 /* AppState.swift in Sources */,
+				000000000000000000000104 /* Logging.swift in Sources */,
+				000000000000000000000105 /* SettingsStore.swift in Sources */,
+				000000000000000000000106 /* AudioCaptureManager.swift in Sources */,
+				000000000000000000000115 /* AudioDeviceManager.swift in Sources */,
+				000000000000000000000107 /* TranscriptionEngine.swift in Sources */,
+				000000000000000000000108 /* TranscriptionManager.swift in Sources */,
+				000000000000000000000109 /* WhisperCLITranscriber.swift in Sources */,
+				00000000000000000000010A /* Hotkey.swift in Sources */,
+				00000000000000000000010B /* HotkeyManager.swift in Sources */,
+				000000000000000000000116 /* HoldHotkeyManager.swift in Sources */,
+				00000000000000000000010C /* PasteManager.swift in Sources */,
+				00000000000000000000010D /* PermissionsManager.swift in Sources */,
+				000000000000000000000123 /* LaunchAtLoginManager.swift in Sources */,
+				00000000000000000000010E /* StatusBarController.swift in Sources */,
+				00000000000000000000010F /* TranscriptPopoverView.swift in Sources */,
+				000000000000000000000110 /* SettingsWindowController.swift in Sources */,
+				000000000000000000000111 /* SettingsView.swift in Sources */,
+				000000000000000000000112 /* PermissionsView.swift in Sources */,
+				000000000000000000000113 /* HotkeyRecorderView.swift in Sources */,
+				000000000000000000000117 /* RecordingIndicatorView.swift in Sources */,
+				000000000000000000000118 /* RecordingIndicatorWindowController.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		000000000000000000000A00 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				AUTOMATION_APPLE_EVENTS = NO;
+				CODE_SIGN_ENTITLEMENTS = LocalTranscribePaste/LocalTranscribePaste.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
+				CODE_SIGN_RUNTIME = YES;
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = AYR2LJR788;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_RESOURCE_ACCESS_AUDIO_INPUT = NO;
+				ENABLE_RESOURCE_ACCESS_CALENDARS = NO;
+				ENABLE_RESOURCE_ACCESS_CAMERA = NO;
+				ENABLE_RESOURCE_ACCESS_CONTACTS = NO;
+				ENABLE_RESOURCE_ACCESS_LOCATION = NO;
+				ENABLE_RESOURCE_ACCESS_PHOTO_LIBRARY = NO;
+				INFOPLIST_FILE = LocalTranscribePaste/Resources/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 12.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.localtranscribepaste.app;
+				PRODUCT_NAME = R3VIB3;
+				RUNTIME_EXCEPTION_ALLOW_DYLD_ENVIRONMENT_VARIABLES = NO;
+				RUNTIME_EXCEPTION_ALLOW_JIT = NO;
+				RUNTIME_EXCEPTION_ALLOW_UNSIGNED_EXECUTABLE_MEMORY = NO;
+				RUNTIME_EXCEPTION_DEBUGGING_TOOL = NO;
+				RUNTIME_EXCEPTION_DISABLE_EXECUTABLE_PAGE_PROTECTION = NO;
+				RUNTIME_EXCEPTION_DISABLE_LIBRARY_VALIDATION = NO;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		000000000000000000000A01 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				AUTOMATION_APPLE_EVENTS = NO;
+				CODE_SIGN_ENTITLEMENTS = LocalTranscribePaste/LocalTranscribePaste.entitlements;
+				CODE_SIGN_IDENTITY = "Developer ID Application";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
+				CODE_SIGN_RUNTIME = YES;
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = AYR2LJR788;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_RESOURCE_ACCESS_AUDIO_INPUT = NO;
+				ENABLE_RESOURCE_ACCESS_CALENDARS = NO;
+				ENABLE_RESOURCE_ACCESS_CAMERA = NO;
+				ENABLE_RESOURCE_ACCESS_CONTACTS = NO;
+				ENABLE_RESOURCE_ACCESS_LOCATION = NO;
+				ENABLE_RESOURCE_ACCESS_PHOTO_LIBRARY = NO;
+				INFOPLIST_FILE = LocalTranscribePaste/Resources/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 12.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.localtranscribepaste.app;
+				PRODUCT_NAME = R3VIB3;
+				RUNTIME_EXCEPTION_ALLOW_DYLD_ENVIRONMENT_VARIABLES = NO;
+				RUNTIME_EXCEPTION_ALLOW_JIT = NO;
+				RUNTIME_EXCEPTION_ALLOW_UNSIGNED_EXECUTABLE_MEMORY = NO;
+				RUNTIME_EXCEPTION_DEBUGGING_TOOL = NO;
+				RUNTIME_EXCEPTION_DISABLE_EXECUTABLE_PAGE_PROTECTION = NO;
+				RUNTIME_EXCEPTION_DISABLE_LIBRARY_VALIDATION = NO;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		000000000000000000000701 /* Build configuration list for PBXNativeTarget "LocalTranscribePaste" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				000000000000000000000A00 /* Debug */,
+				000000000000000000000A01 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		000000000000000000000901 /* Build configuration list for PBXProject "LocalTranscribePaste" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				000000000000000000000A00 /* Debug */,
+				000000000000000000000A01 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 000000000000000000000900 /* Project object */;
+}

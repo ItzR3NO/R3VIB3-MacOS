@@ -27,7 +27,7 @@ final class HotkeyManager {
     }
 
     private func register(hotkey: Hotkey, id: HotkeyID, ref: inout EventHotKeyRef?) {
-        var hotkeyID = EventHotKeyID(signature: fourCharCode("LTPA"), id: id.rawValue)
+        let hotkeyID = EventHotKeyID(signature: fourCharCode("LTPA"), id: id.rawValue)
         let status = RegisterEventHotKey(hotkey.keyCode, hotkey.carbonFlags, hotkeyID, GetEventDispatcherTarget(), 0, &ref)
         if status != noErr {
             Log.hotkeys.error("Failed to register hotkey \(id.rawValue)")

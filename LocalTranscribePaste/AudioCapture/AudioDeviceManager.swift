@@ -92,18 +92,20 @@ enum AudioDeviceManager {
             mScope: kAudioObjectPropertyScopeGlobal,
             mElement: kAudioObjectPropertyElementMain
         )
-        var dataSize = UInt32(MemoryLayout<CFString?>.size)
-        var name: CFString?
-        let status = AudioObjectGetPropertyData(
-            deviceID,
-            &address,
-            0,
-            nil,
-            &dataSize,
-            &name
-        )
+        var dataSize = UInt32(MemoryLayout<CFString>.size)
+        var name: CFString = "" as CFString
+        let status = withUnsafeMutableBytes(of: &name) { rawBuffer in
+            AudioObjectGetPropertyData(
+                deviceID,
+                &address,
+                0,
+                nil,
+                &dataSize,
+                rawBuffer.baseAddress!
+            )
+        }
         guard status == noErr else { return nil }
-        return name as String?
+        return name as String
     }
 
     static func deviceUID(deviceID: AudioDeviceID) -> String? {
@@ -112,18 +114,20 @@ enum AudioDeviceManager {
             mScope: kAudioObjectPropertyScopeGlobal,
             mElement: kAudioObjectPropertyElementMain
         )
-        var dataSize = UInt32(MemoryLayout<CFString?>.size)
-        var uid: CFString?
-        let status = AudioObjectGetPropertyData(
-            deviceID,
-            &address,
-            0,
-            nil,
-            &dataSize,
-            &uid
-        )
+        var dataSize = UInt32(MemoryLayout<CFString>.size)
+        var uid: CFString = "" as CFString
+        let status = withUnsafeMutableBytes(of: &uid) { rawBuffer in
+            AudioObjectGetPropertyData(
+                deviceID,
+                &address,
+                0,
+                nil,
+                &dataSize,
+                rawBuffer.baseAddress!
+            )
+        }
         guard status == noErr else { return nil }
-        return uid as String?
+        return uid as String
     }
 
     static func inputChannelCount(deviceID: AudioDeviceID) -> Int {
@@ -141,8 +145,12 @@ enum AudioDeviceManager {
             &dataSize
         )
         guard status == noErr else { return 0 }
-        let bufferList = UnsafeMutablePointer<AudioBufferList>.allocate(capacity: Int(dataSize))
-        defer { bufferList.deallocate() }
+        let bufferListPointer = UnsafeMutableRawPointer.allocate(
+            byteCount: Int(dataSize),
+            alignment: MemoryLayout<AudioBufferList>.alignment
+        )
+        defer { bufferListPointer.deallocate() }
+        let bufferList = bufferListPointer.bindMemory(to: AudioBufferList.self, capacity: 1)
         status = AudioObjectGetPropertyData(
             deviceID,
             &address,
@@ -152,8 +160,10 @@ enum AudioDeviceManager {
             bufferList
         )
         guard status == noErr else { return 0 }
-        let buffers = UnsafeBufferPointer(start: &bufferList.pointee.mBuffers, count: Int(bufferList.pointee.mNumberBuffers))
-        return buffers.reduce(0) { $0 + Int($1.mNumberChannels) }
+        return withUnsafePointer(to: &bufferList.pointee.mBuffers) { mBuffersPtr in
+            let buffers = UnsafeBufferPointer(start: mBuffersPtr, count: Int(bufferList.pointee.mNumberBuffers))
+            return buffers.reduce(0) { $0 + Int($1.mNumberChannels) }
+        }
     }
 
     static func isBuiltIn(deviceID: AudioDeviceID) -> Bool {

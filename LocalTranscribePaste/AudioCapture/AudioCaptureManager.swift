@@ -50,10 +50,10 @@ final class AudioCaptureManager {
                 let channelIndex = self.resolveChannelIndex(buffer: buffer)
                 if let floatData = buffer.floatChannelData, let dest = monoBuffer.floatChannelData?[0] {
                     let src = floatData[channelIndex]
-                    dest.assign(from: src, count: Int(buffer.frameLength))
+                    dest.update(from: src, count: Int(buffer.frameLength))
                 } else if let int16Data = buffer.int16ChannelData, let dest = monoBuffer.int16ChannelData?[0] {
                     let src = int16Data[channelIndex]
-                    dest.assign(from: src, count: Int(buffer.frameLength))
+                    dest.update(from: src, count: Int(buffer.frameLength))
                 } else {
                     throw AudioCaptureError.invalidFormat
                 }

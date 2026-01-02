@@ -3,6 +3,7 @@ import SwiftUI
 struct PermissionsView: View {
     @State private var micAuthorized = AppState.shared.permissions.isMicrophoneAuthorized
     @State private var accessibilityAuthorized = AppState.shared.permissions.isAccessibilityAuthorized
+    @State private var micStatus: MicrophoneAuthorizationStatus = AppState.shared.permissions.microphoneStatus
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -16,9 +17,15 @@ struct PermissionsView: View {
 
             GroupBox(label: Text("Actions")) {
                 VStack(alignment: .leading, spacing: 12) {
-                    Button("Request Microphone Permission") {
-                        AppState.shared.permissions.requestMicrophoneAccess { _ in
-                            refresh()
+                    if micStatus == .notDetermined {
+                        Button("Request Microphone Permission") {
+                            AppState.shared.permissions.requestMicrophoneAccess { _ in
+                                refresh()
+                            }
+                        }
+                    } else if micStatus == .denied || micStatus == .restricted {
+                        Button("Open System Settings (Microphone)") {
+                            AppState.shared.permissions.openMicrophoneSettings()
                         }
                     }
                     Button("Request Accessibility Permission") {
@@ -52,6 +59,7 @@ struct PermissionsView: View {
     private func refresh() {
         micAuthorized = AppState.shared.permissions.isMicrophoneAuthorized
         accessibilityAuthorized = AppState.shared.permissions.isAccessibilityAuthorized
+        micStatus = AppState.shared.permissions.microphoneStatus
         AppState.shared.permissions.logCurrentStatus()
         if accessibilityAuthorized {
             HoldHotkeyManager.shared.restartIfNeeded()

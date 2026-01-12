@@ -53,7 +53,9 @@ final class StatusBarController: NSObject {
 
     func showPermissions() {
         if permissionsWindow == nil {
-            permissionsWindow = PermissionsWindowController()
+            if let appState = appState {
+                permissionsWindow = PermissionsWindowController(appState: appState)
+            }
         }
         permissionsWindow?.showWindow(nil)
         permissionsWindow?.window?.makeKeyAndOrderFront(nil)
@@ -62,7 +64,9 @@ final class StatusBarController: NSObject {
 
     func showSettings() {
         if settingsWindow == nil {
-            settingsWindow = SettingsWindowController()
+            if let appState = appState {
+                settingsWindow = SettingsWindowController(appState: appState)
+            }
         }
         settingsWindow?.showWindow(nil)
         settingsWindow?.window?.makeKeyAndOrderFront(nil)
@@ -111,7 +115,8 @@ final class StatusBarController: NSObject {
 
     private func showPopover<Content: View>(content: Content) {
         guard let button = statusItem.button else { return }
-        let hosting = NSHostingController(rootView: content.environmentObject(AppState.shared))
+        guard let appState = appState else { return }
+        let hosting = NSHostingController(rootView: content.environmentObject(appState))
         popover.behavior = .transient
         popover.contentViewController = hosting
         popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)

@@ -64,7 +64,7 @@ final class RecordingIndicatorWindowController: NSWindowController {
         let width = size.width
         let height = size.height
         let x = frame.midX - width / 2
-        let y = frame.maxY - height - 12
+        let y = frame.minY + 12
         window.setFrame(NSRect(x: x, y: y, width: width, height: height), display: false)
     }
 

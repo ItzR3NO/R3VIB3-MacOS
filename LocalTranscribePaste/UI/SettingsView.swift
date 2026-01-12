@@ -2,125 +2,185 @@ import SwiftUI
 import UniformTypeIdentifiers
 
 struct SettingsView: View {
-    @ObservedObject private var settings = AppState.shared.settings
-    @State private var launchAtLoginEnabled = LaunchAtLoginManager.shared.isEnabled()
+    private let deviceProvider: AudioDeviceProviding
+    private let launchAtLoginManager: LaunchAtLoginManaging
+    private let permissions: PermissionsManaging
+    private let statusBarController: StatusBarControlling
+    @ObservedObject private var settings: SettingsStore
+    @State private var launchAtLoginEnabled: Bool
+
+    private var devices: [AudioInputDevice] {
+        deviceProvider.inputDevices()
+    }
+
+    private var selectedDevice: AudioInputDevice? {
+        devices.first { $0.uid == settings.inputDeviceUID }
+    }
+
+    private var defaultChannels: Int {
+        deviceProvider.defaultInputDeviceID()
+            .map { deviceProvider.inputChannelCount(deviceID: $0) } ?? 0
+    }
+
+    private var channelCount: Int {
+        selectedDevice?.channels ?? defaultChannels
+    }
+
+    private var launchSupported: Bool {
+        launchAtLoginManager.isSupported
+    }
+
+    init(
+        settings: SettingsStore,
+        permissions: PermissionsManaging,
+        statusBarController: StatusBarControlling,
+        deviceProvider: AudioDeviceProviding = SystemAudioDeviceProvider(),
+        launchAtLoginManager: LaunchAtLoginManaging = LaunchAtLoginManager.shared
+    ) {
+        self._settings = ObservedObject(wrappedValue: settings)
+        self.permissions = permissions
+        self.statusBarController = statusBarController
+        self.deviceProvider = deviceProvider
+        self.launchAtLoginManager = launchAtLoginManager
+        _launchAtLoginEnabled = State(initialValue: launchAtLoginManager.isEnabled())
+    }
 
     var body: some View {
-        let devices = AudioDeviceManager.inputDevices()
-        let selectedDevice = devices.first { $0.uid == settings.inputDeviceUID }
-        let defaultChannels = AudioDeviceManager.defaultInputDeviceID().map { AudioDeviceManager.inputChannelCount(deviceID: $0) } ?? 0
-        let channelCount = selectedDevice?.channels ?? defaultChannels
-        let launchSupported = LaunchAtLoginManager.shared.isSupported
-        ScrollView {
-            VStack(alignment: .leading, spacing: 16) {
-                GroupBox(label: Text("Microphone input")) {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Picker("Input Device", selection: $settings.inputDeviceUID) {
-                            Text("System Default").tag("system")
-                            ForEach(devices) { device in
-                                Text("\(device.name) (\(device.channels) ch)").tag(device.uid)
-                            }
-                        }
-                        .pickerStyle(MenuPickerStyle())
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        Picker("Input Channel", selection: $settings.inputChannelIndex) {
-                            Text("Auto").tag(0)
-                            ForEach(1...max(channelCount, 1), id: \.self) { channel in
-                                Text("Channel \(channel)").tag(channel)
-                            }
-                        }
-                        .pickerStyle(MenuPickerStyle())
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        Text("If your default input is multi-channel, choose a specific mic here.")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                    }
-                    .padding(8)
+        Group {
+            if #available(macOS 13.0, *) {
+                Form {
+                    formBody
                 }
-
-                GroupBox(label: Text("Transcription model")) {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Model path")
-                            .font(.subheadline)
-                        HStack {
-                            TextField("/path/to/model.bin", text: $settings.modelPath)
-                                .textFieldStyle(RoundedBorderTextFieldStyle())
-                            Button("Choose") {
-                                chooseModel()
-                            }
-                        }
-                        Text("Default: \(SettingsStore.defaultModelPath().path)")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                    }
-                    .padding(8)
-                }
-
-                GroupBox(label: Text("Paste behavior")) {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Picker("Paste Mode", selection: $settings.pasteMode) {
-                            Text("Cmd+V").tag(PasteMode.cmdV)
-                            Text("Ctrl+V").tag(PasteMode.ctrlV)
-                            Text("Type").tag(PasteMode.type)
-                        }
-                        .pickerStyle(SegmentedPickerStyle())
-                        Toggle("Copy transcript to clipboard after transcription", isOn: $settings.autoCopyOnTranscription)
-                        Toggle("Show transcript popover after transcription", isOn: $settings.showTranscriptPopover)
-                        Text("Type mode injects characters when paste is blocked.")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                    }
-                    .padding(8)
-                }
-
-                GroupBox(label: Text("Startup")) {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Toggle("Launch at login", isOn: Binding(
-                            get: { launchAtLoginEnabled },
-                            set: { newValue in
-                                if LaunchAtLoginManager.shared.setEnabled(newValue) {
-                                    launchAtLoginEnabled = newValue
-                                } else {
-                                    launchAtLoginEnabled = LaunchAtLoginManager.shared.isEnabled()
-                                }
-                            }
-                        ))
-                        .disabled(!launchSupported)
-                        if !launchSupported {
-                            Text("Requires macOS 13 or later.")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                        }
-                    }
-                    .padding(8)
-                }
-
-                GroupBox(label: Text("Hotkeys")) {
-                    VStack(alignment: .leading, spacing: 12) {
-                        HStack {
-                            Text("Toggle Dictation")
-                                .frame(width: 160, alignment: .leading)
-                            HotkeyRecorderView(hotkey: $settings.toggleHotkey)
-                        }
-                        HStack {
-                            Text("Hold to Dictate")
-                                .frame(width: 160, alignment: .leading)
-                            HotkeyRecorderView(hotkey: $settings.holdHotkey)
-                        }
-                        HStack {
-                            Text("Paste Last Transcript")
-                                .frame(width: 160, alignment: .leading)
-                            HotkeyRecorderView(hotkey: $settings.pasteHotkey)
-                        }
-                    }
-                    .padding(8)
+                .formStyle(.grouped)
+            } else {
+                Form {
+                    formBody
                 }
             }
-            .padding(16)
         }
         .frame(minWidth: 560, minHeight: 420)
         .onAppear {
-            launchAtLoginEnabled = LaunchAtLoginManager.shared.isEnabled()
+            launchAtLoginEnabled = launchAtLoginManager.isEnabled()
+        }
+    }
+
+    @ViewBuilder
+    private var formBody: some View {
+        microphoneSection
+        transcriptionSection
+        pasteSection
+        startupSection
+        hotkeysSection
+    }
+
+    private var microphoneSection: some View {
+        Section("Microphone input") {
+            labeledRow("Input Device") {
+                Picker("", selection: $settings.inputDeviceUID) {
+                    Text("System Default").tag("system")
+                    ForEach(devices) { device in
+                        Text("\(device.name) (\(device.channels) ch)").tag(device.uid)
+                    }
+                }
+                .pickerStyle(MenuPickerStyle())
+                .labelsHidden()
+            }
+            labeledRow("Input Channel") {
+                Picker("", selection: $settings.inputChannelIndex) {
+                    Text("Auto").tag(0)
+                    ForEach(1...max(channelCount, 1), id: \.self) { channel in
+                        Text("Channel \(channel)").tag(channel)
+                    }
+                }
+                .pickerStyle(MenuPickerStyle())
+                .labelsHidden()
+            }
+            Text("If your default input is multi-channel, choose a specific mic here.")
+                .font(.caption)
+                .foregroundColor(.secondary)
+        }
+    }
+
+    private var transcriptionSection: some View {
+        Section("Transcription model") {
+            labeledRow("Model path") {
+                HStack {
+                    TextField("/path/to/model.bin", text: $settings.modelPath)
+                        .textFieldStyle(RoundedBorderTextFieldStyle())
+                    Button("Choose") {
+                        chooseModel()
+                    }
+                }
+            }
+            Text("Default: \(SettingsStore.defaultModelPath().path)")
+                .font(.caption)
+                .foregroundColor(.secondary)
+        }
+    }
+
+    private var pasteSection: some View {
+        Section("Paste behavior") {
+            Picker("Paste Mode", selection: $settings.pasteMode) {
+                Text("Cmd+V").tag(PasteMode.cmdV)
+                Text("Ctrl+V").tag(PasteMode.ctrlV)
+                Text("Type").tag(PasteMode.type)
+            }
+            .pickerStyle(SegmentedPickerStyle())
+            Toggle("Copy transcript to clipboard after transcription", isOn: $settings.autoCopyOnTranscription)
+            Toggle("Show transcript popover after transcription", isOn: $settings.showTranscriptPopover)
+            Text("Type mode injects characters when paste is blocked.")
+                .font(.caption)
+                .foregroundColor(.secondary)
+        }
+    }
+
+    private var startupSection: some View {
+        Section("Startup") {
+            Toggle("Launch at login", isOn: Binding(
+                get: { launchAtLoginEnabled },
+                set: { newValue in
+                    if launchAtLoginManager.setEnabled(newValue) {
+                        launchAtLoginEnabled = newValue
+                    } else {
+                        launchAtLoginEnabled = launchAtLoginManager.isEnabled()
+                    }
+                }
+            ))
+            .disabled(!launchSupported)
+            if !launchSupported {
+                Text("Requires macOS 13 or later.")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+        }
+    }
+
+    private var hotkeysSection: some View {
+        Section("Hotkeys") {
+            labeledRow("Toggle Dictation") {
+                HotkeyRecorderView(hotkey: $settings.toggleHotkey, permissions: permissions, statusBarController: statusBarController)
+            }
+            labeledRow("Hold to Dictate") {
+                HotkeyRecorderView(hotkey: $settings.holdHotkey, permissions: permissions, statusBarController: statusBarController)
+            }
+            labeledRow("Paste Last Transcript") {
+                HotkeyRecorderView(hotkey: $settings.pasteHotkey, permissions: permissions, statusBarController: statusBarController)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func labeledRow<Content: View>(_ title: String, @ViewBuilder content: () -> Content) -> some View {
+        if #available(macOS 13.0, *) {
+            LabeledContent(title) {
+                content()
+            }
+        } else {
+            HStack(alignment: .firstTextBaseline) {
+                Text(title)
+                    .frame(width: 160, alignment: .leading)
+                content()
+            }
         }
     }
 

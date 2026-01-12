@@ -12,55 +12,52 @@ enum MicrophoneAuthorizationStatus {
 }
 
 final class PermissionsManager {
+    private let microphoneAccess: MicrophoneAccessProviding
+    private let accessibilityAccess: AccessibilityAccessProviding
+    private let appActivator: AppActivating
+    private let systemSettings: SystemSettingsOpening
+    private let bundle: BundleProviding
+    private let processRunner: ProcessRunning
+    private let logger: PermissionsLogging
+    private let mainThread: MainThreadRunning
+
+    init(
+        microphoneAccess: MicrophoneAccessProviding = SystemMicrophoneAccess(),
+        accessibilityAccess: AccessibilityAccessProviding = SystemAccessibilityAccess(),
+        appActivator: AppActivating = SystemAppActivator(),
+        systemSettings: SystemSettingsOpening = SystemSettingsOpener(),
+        bundle: BundleProviding = MainBundleProvider(),
+        processRunner: ProcessRunning = SystemProcessRunner(),
+        logger: PermissionsLogging = DefaultPermissionsLogger(),
+        mainThread: MainThreadRunning = MainThreadRunner()
+    ) {
+        self.microphoneAccess = microphoneAccess
+        self.accessibilityAccess = accessibilityAccess
+        self.appActivator = appActivator
+        self.systemSettings = systemSettings
+        self.bundle = bundle
+        self.processRunner = processRunner
+        self.logger = logger
+        self.mainThread = mainThread
+    }
+
     var isMicrophoneAuthorized: Bool {
         return microphoneStatus == .authorized
     }
 
     var microphoneStatus: MicrophoneAuthorizationStatus {
-        if #available(macOS 14.0, *) {
-            switch AVAudioApplication.shared.recordPermission {
-            case .granted:
-                return .authorized
-            case .denied:
-                return .denied
-            case .undetermined:
-                return .notDetermined
-            @unknown default:
-                return .restricted
-            }
-        }
-        switch AVCaptureDevice.authorizationStatus(for: .audio) {
-        case .authorized:
-            return .authorized
-        case .denied:
-            return .denied
-        case .restricted:
-            return .restricted
-        case .notDetermined:
-            return .notDetermined
-        @unknown default:
-            return .restricted
-        }
+        microphoneAccess.authorizationStatus
     }
 
     var isAccessibilityAuthorized: Bool {
-        AXIsProcessTrusted()
+        accessibilityAccess.isTrusted
     }
 
     func requestMicrophoneAccess(completion: @escaping (Bool) -> Void) {
-        NSApp.activate(ignoringOtherApps: true)
-        if #available(macOS 14.0, *) {
-            AVAudioApplication.requestRecordPermission { granted in
-                Log.permissions.info("Microphone permission granted (AVAudioApplication): \(granted)")
-                DispatchQueue.main.async {
-                    completion(granted)
-                }
-            }
-            return
-        }
-        AVCaptureDevice.requestAccess(for: .audio) { granted in
-            Log.permissions.info("Microphone permission granted (AVCaptureDevice): \(granted)")
-            DispatchQueue.main.async {
+        appActivator.activate()
+        microphoneAccess.requestAccess { granted, source in
+            self.logger.logMicrophoneAccess(granted: granted, source: source)
+            self.mainThread.run {
                 completion(granted)
             }
         }
@@ -71,31 +68,35 @@ final class PermissionsManager {
     }
 
     func openMicrophoneSettings() {
-        NSApp.activate(ignoringOtherApps: true)
-        let appURL = URL(fileURLWithPath: "/System/Applications/System Settings.app")
-        let config = NSWorkspace.OpenConfiguration()
-        NSWorkspace.shared.openApplication(at: appURL, configuration: config) { _, _ in
-            if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Microphone") {
-                NSWorkspace.shared.open(url)
-                return
-            }
-            let fallback = URL(fileURLWithPath: "/System/Library/PreferencePanes/Security.prefPane")
-            NSWorkspace.shared.open(fallback)
-        }
+        appActivator.activate()
+        systemSettings.openMicrophonePrivacy()
     }
 
     func requestAccessibilityAccess() {
-        let options = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: true] as CFDictionary
-        let trusted = AXIsProcessTrustedWithOptions(options)
-        Log.permissions.info("Accessibility permission prompt shown, trusted: \(trusted)")
+        let trusted = accessibilityAccess.requestAccessPrompt()
+        logger.logAccessibilityPrompt(trusted: trusted)
+    }
+
+    func resetAccessibilityPermissionIfNeeded() {
+        guard !isAccessibilityAuthorized else { return }
+        guard let bundleID = bundle.bundleIdentifier else { return }
+        let tccutil = URL(fileURLWithPath: "/usr/bin/tccutil")
+        do {
+            let result = try processRunner.run(executableURL: tccutil, arguments: ["reset", "Accessibility", bundleID])
+            logger.logTCCReset(service: "Accessibility", bundleID: bundleID, status: result.terminationStatus)
+        } catch {
+            logger.logTCCResetFailed(service: "Accessibility", bundleID: bundleID, error: error)
+        }
     }
 
     func logCurrentStatus() {
-        let captureStatus = AVCaptureDevice.authorizationStatus(for: .audio)
-        var audioStatus: String = "n/a"
-        if #available(macOS 14.0, *) {
-            audioStatus = String(describing: AVAudioApplication.shared.recordPermission)
-        }
-        Log.permissions.info("Permission status - mic:\(self.isMicrophoneAuthorized) capture:\(String(describing: captureStatus)) avfaudio:\(audioStatus) accessibility:\(self.isAccessibilityAuthorized)")
+        let captureStatus = microphoneAccess.captureAuthorizationStatusDescription
+        let audioStatus = microphoneAccess.recordPermissionDescription
+        logger.logPermissionStatus(
+            micAuthorized: isMicrophoneAuthorized,
+            captureStatus: captureStatus,
+            avfaudioStatus: audioStatus,
+            accessibilityAuthorized: isAccessibilityAuthorized
+        )
     }
 }

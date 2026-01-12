@@ -7,11 +7,13 @@ final class HotkeyManager {
     var onToggleDictation: (() -> Void)?
     var onPasteLastTranscript: (() -> Void)?
 
+    private let mainThread: MainThreadRunning
     private var toggleRef: EventHotKeyRef?
     private var pasteRef: EventHotKeyRef?
     private var eventHandler: EventHandlerRef?
 
-    private init() {
+    private init(mainThread: MainThreadRunning = MainThreadRunner()) {
+        self.mainThread = mainThread
         installHandler()
     }
 
@@ -44,22 +46,25 @@ final class HotkeyManager {
     private func installHandler() {
         guard eventHandler == nil else { return }
         var eventType = EventTypeSpec(eventClass: OSType(kEventClassKeyboard), eventKind: UInt32(kEventHotKeyPressed))
-        let handler: EventHandlerUPP = { _, eventRef, _ in
+        let handler: EventHandlerUPP = { _, eventRef, userData in
+            guard let userData = userData else { return noErr }
+            let manager = Unmanaged<HotkeyManager>.fromOpaque(userData).takeUnretainedValue()
             var hotkeyID = EventHotKeyID()
             GetEventParameter(eventRef, EventParamName(kEventParamDirectObject), EventParamType(typeEventHotKeyID), nil, MemoryLayout<EventHotKeyID>.size, nil, &hotkeyID)
-            DispatchQueue.main.async {
+            manager.mainThread.run {
                 switch HotkeyID(rawValue: hotkeyID.id) {
                 case .toggle:
-                    HotkeyManager.shared.onToggleDictation?()
+                    manager.onToggleDictation?()
                 case .paste:
-                    HotkeyManager.shared.onPasteLastTranscript?()
+                    manager.onPasteLastTranscript?()
                 case .none:
                     break
                 }
             }
             return noErr
         }
-        InstallEventHandler(GetEventDispatcherTarget(), handler, 1, &eventType, nil, &eventHandler)
+        let userInfo = Unmanaged.passUnretained(self).toOpaque()
+        InstallEventHandler(GetEventDispatcherTarget(), handler, 1, &eventType, userInfo, &eventHandler)
     }
 }
 

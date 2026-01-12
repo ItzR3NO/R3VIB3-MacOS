@@ -44,37 +44,47 @@ final class SettingsStore: ObservableObject {
         didSet { saveShowTranscriptPopover() }
     }
 
-    private let defaults = UserDefaults.standard
+    private let defaults: KeyValueStoring
+    private let fileSystem: FileSystem
+    private let deviceProvider: AudioDeviceProviding
 
-    init() {
-        let defaultModel = SettingsStore.defaultModelPath().path
+    init(
+        defaults: KeyValueStoring = UserDefaultsStore(),
+        fileSystem: FileSystem = SystemFileSystem(),
+        deviceProvider: AudioDeviceProviding = SystemAudioDeviceProvider()
+    ) {
+        self.defaults = defaults
+        self.fileSystem = fileSystem
+        self.deviceProvider = deviceProvider
+
+        let defaultModel = SettingsStore.defaultModelPath(fileSystem: fileSystem).path
         modelPath = defaults.string(forKey: Keys.modelPath) ?? defaultModel
         pasteMode = PasteMode(rawValue: defaults.string(forKey: Keys.pasteMode) ?? "cmdV") ?? .cmdV
-        toggleHotkey = SettingsStore.loadHotkey(key: Keys.toggleHotkey) ?? Hotkey.defaultToggle
-        pasteHotkey = SettingsStore.loadHotkey(key: Keys.pasteHotkey) ?? Hotkey.defaultPaste
-        holdHotkey = SettingsStore.loadHotkey(key: Keys.holdHotkey) ?? Hotkey.defaultHold
-        inputDeviceUID = defaults.string(forKey: Keys.inputDeviceUID) ?? SettingsStore.defaultInputDeviceUID()
+        toggleHotkey = SettingsStore.loadHotkey(key: Keys.toggleHotkey, defaults: defaults) ?? Hotkey.defaultToggle
+        pasteHotkey = SettingsStore.loadHotkey(key: Keys.pasteHotkey, defaults: defaults) ?? Hotkey.defaultPaste
+        holdHotkey = SettingsStore.loadHotkey(key: Keys.holdHotkey, defaults: defaults) ?? Hotkey.defaultHold
+        inputDeviceUID = defaults.string(forKey: Keys.inputDeviceUID) ?? SettingsStore.defaultInputDeviceUID(deviceProvider: deviceProvider)
         inputChannelIndex = defaults.integer(forKey: Keys.inputChannelIndex)
         autoCopyOnTranscription = defaults.bool(forKey: Keys.autoCopyOnTranscription)
         showTranscriptPopover = defaults.object(forKey: Keys.showTranscriptPopover) as? Bool ?? true
     }
 
-    static func defaultModelPath() -> URL {
-        let modelsDir = ensureModelsDirectory()
+    static func defaultModelPath(fileSystem: FileSystem = SystemFileSystem()) -> URL {
+        let modelsDir = ensureModelsDirectory(fileSystem: fileSystem)
         return modelsDir.appendingPathComponent("ggml-base.en.bin")
     }
 
-    static func ensureModelsDirectory() -> URL {
-        let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
+    static func ensureModelsDirectory(fileSystem: FileSystem = SystemFileSystem()) -> URL {
+        let appSupport = fileSystem.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
         let modelsDir = appSupport.appendingPathComponent("R3VIB3/Models", isDirectory: true)
-        if FileManager.default.fileExists(atPath: modelsDir.path) {
+        if fileSystem.fileExists(atPath: modelsDir.path) {
             return modelsDir
         }
         let legacyDir = appSupport.appendingPathComponent("LocalTranscribePaste/Models", isDirectory: true)
-        if FileManager.default.fileExists(atPath: legacyDir.path) {
+        if fileSystem.fileExists(atPath: legacyDir.path) {
             return legacyDir
         }
-        try? FileManager.default.createDirectory(at: modelsDir, withIntermediateDirectories: true)
+        try? fileSystem.createDirectory(at: modelsDir, withIntermediateDirectories: true)
         return modelsDir
     }
 
@@ -109,8 +119,8 @@ final class SettingsStore: ObservableObject {
         }
     }
 
-    private static func loadHotkey(key: String) -> Hotkey? {
-        guard let data = UserDefaults.standard.data(forKey: key) else { return nil }
+    private static func loadHotkey(key: String, defaults: KeyValueStoring) -> Hotkey? {
+        guard let data = defaults.data(forKey: key) else { return nil }
         let decoder = JSONDecoder()
         return try? decoder.decode(Hotkey.self, from: data)
     }
@@ -127,11 +137,11 @@ final class SettingsStore: ObservableObject {
         static let showTranscriptPopover = "showTranscriptPopover"
     }
 
-    static func defaultInputDeviceUID() -> String {
-        guard let defaultID = AudioDeviceManager.defaultInputDeviceID() else { return "system" }
-        let channels = AudioDeviceManager.inputChannelCount(deviceID: defaultID)
-        if channels > 2, let builtIn = AudioDeviceManager.builtInMicrophoneDeviceID(),
-           let uid = AudioDeviceManager.deviceUID(deviceID: builtIn) {
+    static func defaultInputDeviceUID(deviceProvider: AudioDeviceProviding = SystemAudioDeviceProvider()) -> String {
+        guard let defaultID = deviceProvider.defaultInputDeviceID() else { return "system" }
+        let channels = deviceProvider.inputChannelCount(deviceID: defaultID)
+        if channels > 2, let builtIn = deviceProvider.builtInMicrophoneDeviceID(),
+           let uid = deviceProvider.deviceUID(deviceID: builtIn) {
             return uid
         }
         return "system"

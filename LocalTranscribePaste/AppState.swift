@@ -14,18 +14,45 @@ final class AppState: ObservableObject {
     @Published var activeRecordingMode: RecordingMode = .none
     @Published var isPasteReady: Bool = false
 
-    let settings = SettingsStore()
-    let audioCapture = AudioCaptureManager()
-    let transcriptionManager = TranscriptionManager()
-    let pasteManager = PasteManager()
-    let permissions = PermissionsManager()
+    let settings: SettingsStore
+    let permissions: PermissionsManaging
 
-    lazy var statusBarController = StatusBarController(appState: self)
+    private let audioCapture: AudioCapturing
+    private let transcriptionManager: TranscriptionManaging
+    private let pasteManager: PasteManaging
+    private var hotkeyManager: HotkeyManaging
+    private var holdHotkeyManager: HoldHotkeyManaging
+    private let statusBarControllerFactory: (AppState) -> StatusBarControlling
+    private let mainThread: MainThreadRunning
+    private let notificationCenter: NotificationCenter
+
+    lazy var statusBarController: StatusBarControlling = statusBarControllerFactory(self)
 
     private var cancellables = Set<AnyCancellable>()
     private var accessibilityObserver: Any?
 
-    private init() {
+    init(
+        settings: SettingsStore = SettingsStore(),
+        audioCapture: AudioCapturing = AudioCaptureManager(),
+        transcriptionManager: TranscriptionManaging = TranscriptionManager(),
+        pasteManager: PasteManaging = PasteManager(),
+        permissions: PermissionsManaging = PermissionsManager(),
+        hotkeyManager: HotkeyManaging = HotkeyManager.shared,
+        holdHotkeyManager: HoldHotkeyManaging = HoldHotkeyManager.shared,
+        statusBarControllerFactory: @escaping (AppState) -> StatusBarControlling = { StatusBarController(appState: $0) },
+        mainThread: MainThreadRunning = MainThreadRunner(),
+        notificationCenter: NotificationCenter = .default
+    ) {
+        self.settings = settings
+        self.audioCapture = audioCapture
+        self.transcriptionManager = transcriptionManager
+        self.pasteManager = pasteManager
+        self.permissions = permissions
+        self.hotkeyManager = hotkeyManager
+        self.holdHotkeyManager = holdHotkeyManager
+        self.statusBarControllerFactory = statusBarControllerFactory
+        self.mainThread = mainThread
+        self.notificationCenter = notificationCenter
         configureHotkeys()
         observeSettings()
     }
@@ -34,52 +61,53 @@ final class AppState: ObservableObject {
         _ = statusBarController
         permissions.logCurrentStatus()
         if !permissions.isAccessibilityAuthorized {
-            permissions.requestAccessibilityAccess()
+            permissions.resetAccessibilityPermissionIfNeeded()
+            statusBarController.showMessage("Accessibility permission required. Open Permissions checklist from the menu bar to enable.")
         }
-        accessibilityObserver = NotificationCenter.default.addObserver(
+        accessibilityObserver = notificationCenter.addObserver(
             forName: NSApplication.didBecomeActiveNotification,
             object: nil,
             queue: .main
         ) { [weak self] _ in
             guard let self = self else { return }
             if self.permissions.isAccessibilityAuthorized {
-                HoldHotkeyManager.shared.restartIfNeeded()
+                self.holdHotkeyManager.restartIfNeeded()
             }
         }
     }
 
     private func configureHotkeys() {
-        HoldHotkeyManager.shared.onToggle = { [weak self] in
+        holdHotkeyManager.onToggle = { [weak self] in
             guard let self = self else { return }
             if self.settings.toggleHotkey.requiresEventTap {
                 self.toggleDictation()
             }
         }
-        HoldHotkeyManager.shared.onPasteKeystroke = { [weak self] keyCode, flags in
+        holdHotkeyManager.onPasteKeystroke = { [weak self] keyCode, flags in
             self?.handlePasteKeystroke(keyCode: keyCode, flags: flags)
         }
-        HoldHotkeyManager.shared.onPaste = { [weak self] in
+        holdHotkeyManager.onPaste = { [weak self] in
             guard let self = self else { return }
             if self.settings.pasteHotkey.requiresEventTap {
                 self.pasteLastTranscript()
             }
         }
-        HoldHotkeyManager.shared.onHoldStart = { [weak self] in
+        holdHotkeyManager.onHoldStart = { [weak self] in
             self?.startHoldRecording()
         }
-        HoldHotkeyManager.shared.onHoldEnd = { [weak self] in
+        holdHotkeyManager.onHoldEnd = { [weak self] in
             self?.stopHoldRecording()
         }
-        HoldHotkeyManager.shared.updateHotkeys(toggle: settings.toggleHotkey, paste: settings.pasteHotkey, hold: settings.holdHotkey)
-        HoldHotkeyManager.shared.start()
+        holdHotkeyManager.updateHotkeys(toggle: settings.toggleHotkey, paste: settings.pasteHotkey, hold: settings.holdHotkey)
+        holdHotkeyManager.start()
 
-        HotkeyManager.shared.onToggleDictation = { [weak self] in
+        hotkeyManager.onToggleDictation = { [weak self] in
             guard let self = self else { return }
             if !self.settings.toggleHotkey.requiresEventTap {
                 self.toggleDictation()
             }
         }
-        HotkeyManager.shared.onPasteLastTranscript = { [weak self] in
+        hotkeyManager.onPasteLastTranscript = { [weak self] in
             guard let self = self else { return }
             if !self.settings.pasteHotkey.requiresEventTap {
                 self.pasteLastTranscript()
@@ -90,17 +118,17 @@ final class AppState: ObservableObject {
 
     private func observeSettings() {
         settings.$toggleHotkey.sink { hotkey in
-            HoldHotkeyManager.shared.updateToggleHotkey(hotkey)
+            self.holdHotkeyManager.updateToggleHotkey(hotkey)
             self.updateCarbonHotkeys()
         }.store(in: &cancellables)
 
         settings.$pasteHotkey.sink { hotkey in
-            HoldHotkeyManager.shared.updatePasteHotkey(hotkey)
+            self.holdHotkeyManager.updatePasteHotkey(hotkey)
             self.updateCarbonHotkeys()
         }.store(in: &cancellables)
 
         settings.$holdHotkey.sink { hotkey in
-            HoldHotkeyManager.shared.updateHoldHotkey(hotkey)
+            self.holdHotkeyManager.updateHoldHotkey(hotkey)
         }.store(in: &cancellables)
     }
 
@@ -116,114 +144,99 @@ final class AppState: ObservableObject {
     private func updateCarbonHotkeys() {
         let toggle = settings.toggleHotkey.requiresEventTap ? nil : settings.toggleHotkey
         let paste = settings.pasteHotkey.requiresEventTap ? nil : settings.pasteHotkey
-        HotkeyManager.shared.registerHotkeys(toggle: toggle, paste: paste)
+        hotkeyManager.registerHotkeys(toggle: toggle, paste: paste)
     }
 
     func toggleDictation() {
-        if !Thread.isMainThread {
-            DispatchQueue.main.async { [weak self] in
-                self?.toggleDictation()
+        mainThread.run { [weak self] in
+            guard let self = self else { return }
+            if self.isRecording {
+                self.stopRecordingAndTranscribe()
+            } else {
+                self.startRecording()
             }
-            return
-        }
-        if isRecording {
-            stopRecordingAndTranscribe()
-        } else {
-            startRecording()
         }
     }
 
     private func startRecording() {
-        if !Thread.isMainThread {
-            DispatchQueue.main.async { [weak self] in
-                self?.startRecording()
+        mainThread.run { [weak self] in
+            guard let self = self else { return }
+            guard self.permissions.isMicrophoneAuthorized else {
+                self.statusBarController.showPermissions()
+                Log.audio.warning("Microphone permission missing")
+                return
             }
-            return
-        }
-        guard permissions.isMicrophoneAuthorized else {
-            statusBarController.showPermissions()
-            Log.audio.warning("Microphone permission missing")
-            return
-        }
-        isPasteReady = false
-        statusBarController.clearPasteReadyIndicator()
-        activeRecordingMode = .toggle
-        do {
-            try audioCapture.startRecording(
-                preferredDeviceUID: settings.inputDeviceUID,
-                preferredChannelIndex: settings.inputChannelIndex
-            )
-            isRecording = true
-            statusBarController.updateRecordingIndicator(isRecording: true)
-            Log.audio.info("Recording started")
-        } catch {
-            Log.audio.error("Failed to start recording: \(error.localizedDescription)")
-            statusBarController.showMessage("Failed to start recording")
+            self.isPasteReady = false
+            self.statusBarController.clearPasteReadyIndicator()
+            self.activeRecordingMode = .toggle
+            do {
+                try self.audioCapture.startRecording(
+                    preferredDeviceUID: self.settings.inputDeviceUID,
+                    preferredChannelIndex: self.settings.inputChannelIndex
+                )
+                self.isRecording = true
+                self.statusBarController.updateRecordingIndicator(isRecording: true)
+                Log.audio.info("Recording started")
+            } catch {
+                Log.audio.error("Failed to start recording: \(error.localizedDescription)")
+                self.statusBarController.showMessage("Failed to start recording")
+            }
         }
     }
 
     private func stopRecordingAndTranscribe() {
-        if !Thread.isMainThread {
-            DispatchQueue.main.async { [weak self] in
-                self?.stopRecordingAndTranscribe()
+        mainThread.run { [weak self] in
+            guard let self = self else { return }
+            do {
+                let audioURL = try self.audioCapture.stopRecording()
+                self.isRecording = false
+                self.statusBarController.updateRecordingIndicator(isRecording: false)
+                Log.audio.info("Recording stopped")
+                self.transcribe(audioURL: audioURL)
+            } catch {
+                self.isRecording = false
+                self.statusBarController.updateRecordingIndicator(isRecording: false)
+                Log.audio.error("Failed to stop recording: \(error.localizedDescription)")
+                self.statusBarController.showMessage("Failed to stop recording")
+                self.activeRecordingMode = .none
             }
-            return
-        }
-        do {
-            let audioURL = try audioCapture.stopRecording()
-            isRecording = false
-            statusBarController.updateRecordingIndicator(isRecording: false)
-            Log.audio.info("Recording stopped")
-            transcribe(audioURL: audioURL)
-        } catch {
-            isRecording = false
-            statusBarController.updateRecordingIndicator(isRecording: false)
-            Log.audio.error("Failed to stop recording: \(error.localizedDescription)")
-            statusBarController.showMessage("Failed to stop recording")
-            activeRecordingMode = .none
         }
     }
 
     private func startHoldRecording() {
-        if !Thread.isMainThread {
-            DispatchQueue.main.async { [weak self] in
-                self?.startHoldRecording()
+        mainThread.run { [weak self] in
+            guard let self = self else { return }
+            guard !self.isRecording else { return }
+            guard self.permissions.isMicrophoneAuthorized else {
+                self.statusBarController.showPermissions()
+                return
             }
-            return
-        }
-        guard !isRecording else { return }
-        guard permissions.isMicrophoneAuthorized else {
-            statusBarController.showPermissions()
-            return
-        }
-        isPasteReady = false
-        statusBarController.clearPasteReadyIndicator()
-        activeRecordingMode = .hold
-        do {
-            try audioCapture.startRecording(
-                preferredDeviceUID: settings.inputDeviceUID,
-                preferredChannelIndex: settings.inputChannelIndex
-            )
-            isRecording = true
-            statusBarController.updateRecordingIndicator(isRecording: true)
-            Log.audio.info("Recording started (hold)")
-        } catch {
-            Log.audio.error("Failed to start recording (hold): \(error.localizedDescription)")
-            statusBarController.showMessage("Failed to start recording")
-            activeRecordingMode = .none
+            self.isPasteReady = false
+            self.statusBarController.clearPasteReadyIndicator()
+            self.activeRecordingMode = .hold
+            do {
+                try self.audioCapture.startRecording(
+                    preferredDeviceUID: self.settings.inputDeviceUID,
+                    preferredChannelIndex: self.settings.inputChannelIndex
+                )
+                self.isRecording = true
+                self.statusBarController.updateRecordingIndicator(isRecording: true)
+                Log.audio.info("Recording started (hold)")
+            } catch {
+                Log.audio.error("Failed to start recording (hold): \(error.localizedDescription)")
+                self.statusBarController.showMessage("Failed to start recording")
+                self.activeRecordingMode = .none
+            }
         }
     }
 
     private func stopHoldRecording() {
-        if !Thread.isMainThread {
-            DispatchQueue.main.async { [weak self] in
-                self?.stopHoldRecording()
-            }
-            return
+        mainThread.run { [weak self] in
+            guard let self = self else { return }
+            guard self.isRecording, self.activeRecordingMode == .hold else { return }
+            self.stopRecordingAndTranscribe()
+            self.activeRecordingMode = .none
         }
-        guard isRecording, activeRecordingMode == .hold else { return }
-        stopRecordingAndTranscribe()
-        activeRecordingMode = .none
     }
 
     func transcribe(audioURL: URL) {
@@ -237,7 +250,7 @@ final class AppState: ObservableObject {
         lastAudioFileURL = audioURL
         Log.transcription.info("Transcription started")
         transcriptionManager.transcribe(audioURL: audioURL, modelPath: settings.modelPath) { [weak self] result in
-            DispatchQueue.main.async {
+            self?.mainThread.run { [weak self] in
                 guard let self = self else { return }
                 self.isTranscribing = false
                 switch result {

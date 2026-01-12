@@ -3,6 +3,9 @@ import AppKit
 import Carbon
 
 struct HotkeyRecorderView: View {
+    private let permissions: PermissionsManaging
+    private let statusBarController: StatusBarControlling
+    private let mainThread: MainThreadRunning
     @Binding var hotkey: Hotkey
     @State private var isRecording = false
     @State private var monitor: Any?
@@ -12,11 +15,27 @@ struct HotkeyRecorderView: View {
     @State private var fnCommitWorkItem: DispatchWorkItem?
     @State private var sawKeyDown = false
 
+    private var recordButtonTitle: String {
+        isRecording ? "Press shortcut" : "Record"
+    }
+
+    init(
+        hotkey: Binding<Hotkey>,
+        permissions: PermissionsManaging,
+        statusBarController: StatusBarControlling,
+        mainThread: MainThreadRunning = MainThreadRunner()
+    ) {
+        self._hotkey = hotkey
+        self.permissions = permissions
+        self.statusBarController = statusBarController
+        self.mainThread = mainThread
+    }
+
     var body: some View {
         HStack {
             Text(hotkey.displayString())
                 .frame(minWidth: 140, alignment: .leading)
-            Button(isRecording ? "Press shortcut" : "Record") {
+            Button(recordButtonTitle) {
                 toggleRecording()
             }
         }
@@ -31,9 +50,9 @@ struct HotkeyRecorderView: View {
     }
 
     private func startRecording() {
-        if !AppState.shared.permissions.isAccessibilityAuthorized {
-            AppState.shared.permissions.requestAccessibilityAccess()
-            AppState.shared.statusBarController.showPermissions()
+        if !permissions.isAccessibilityAuthorized {
+            permissions.requestAccessibilityAccess()
+            statusBarController.showPermissions()
         }
         isRecording = true
         sawKeyDown = false
@@ -87,7 +106,10 @@ struct HotkeyRecorderView: View {
             stopRecording()
         }
         fnCommitWorkItem = workItem
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.25, execute: workItem)
+        mainThread.runAfter(seconds: 0.25) {
+            if workItem.isCancelled { return }
+            workItem.perform()
+        }
     }
 
     private func cancelFnOnlyCommit() {

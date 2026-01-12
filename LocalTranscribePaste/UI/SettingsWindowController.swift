@@ -2,8 +2,12 @@ import AppKit
 import SwiftUI
 
 final class SettingsWindowController: NSWindowController {
-    init() {
-        let view = SettingsView().environmentObject(AppState.shared)
+    init(appState: AppState = AppState.shared) {
+        let view = SettingsView(
+            settings: appState.settings,
+            permissions: appState.permissions,
+            statusBarController: appState.statusBarController
+        )
         let hosting = NSHostingController(rootView: view)
         let window = NSWindow(contentViewController: hosting)
         window.title = "Settings"
@@ -19,8 +23,8 @@ final class SettingsWindowController: NSWindowController {
 }
 
 final class PermissionsWindowController: NSWindowController {
-    init() {
-        let view = PermissionsView().environmentObject(AppState.shared)
+    init(appState: AppState = AppState.shared) {
+        let view = PermissionsView(permissions: appState.permissions)
         let hosting = NSHostingController(rootView: view)
         let window = NSWindow(contentViewController: hosting)
         window.title = "Permissions checklist"

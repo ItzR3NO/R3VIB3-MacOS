@@ -7,7 +7,6 @@ enum IndicatorMode {
 
 struct RecordingIndicatorView: View {
     let mode: IndicatorMode
-    @State private var pulse = false
 
     private var text: String {
         switch mode {
@@ -29,17 +28,7 @@ struct RecordingIndicatorView: View {
 
     var body: some View {
         HStack(spacing: 10) {
-            ZStack {
-                Circle()
-                    .fill(color.opacity(mode == .recording ? 0.25 : 0.18))
-                    .frame(width: 20, height: 20)
-                    .scaleEffect(mode == .recording ? (pulse ? 1.2 : 0.7) : 0.8)
-                    .opacity(mode == .recording ? (pulse ? 0.9 : 0.2) : 0.4)
-                    .animation(mode == .recording ? .easeInOut(duration: 0.9).repeatForever(autoreverses: true) : .default, value: pulse)
-                Circle()
-                    .fill(color)
-                    .frame(width: 8, height: 8)
-            }
+            indicator
             Text(text)
                 .font(.system(size: 13, weight: .semibold))
         }
@@ -49,9 +38,36 @@ struct RecordingIndicatorView: View {
             RoundedRectangle(cornerRadius: 12, style: .continuous)
                 .fill(Color.black.opacity(0.78))
         )
-        .onAppear { pulse = (mode == .recording) }
-        .onChange(of: mode) { newValue in
-            pulse = (newValue == .recording)
+    }
+
+    @ViewBuilder
+    private var indicator: some View {
+        if mode == .recording {
+            WaveformBars(color: color)
+        } else {
+            Circle()
+                .fill(color)
+                .frame(width: 8, height: 8)
+        }
+    }
+}
+
+private struct WaveformBars: View {
+    let color: Color
+
+    var body: some View {
+        TimelineView(.animation) { context in
+            let t = context.date.timeIntervalSinceReferenceDate
+            HStack(spacing: 3) {
+                ForEach(0..<5, id: \.self) { index in
+                    let phase = t * 2.2 + Double(index) * 0.8
+                    let amplitude = 0.3 + 0.7 * abs(sin(phase))
+                    RoundedRectangle(cornerRadius: 2, style: .continuous)
+                        .fill(color)
+                        .frame(width: 3, height: 6 + amplitude * 12)
+                }
+            }
+            .frame(width: 24, height: 18, alignment: .center)
         }
     }
 }

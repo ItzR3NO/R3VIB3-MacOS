@@ -3,60 +3,67 @@ import AppKit
 import Carbon
 
 final class PasteManager {
+    private let pasteboard: PasteboardWriting
+    private let eventSender: KeyboardEventSending
+    private let sleeper: SleepProviding
+    private let logger: PasteLogging
+    private let mainThread: MainThreadRunning
+
+    init(
+        pasteboard: PasteboardWriting = SystemPasteboard(),
+        eventSender: KeyboardEventSending = SystemKeyboardEventSender(),
+        sleeper: SleepProviding = SystemSleeper(),
+        logger: PasteLogging = DefaultPasteLogger(),
+        mainThread: MainThreadRunning = MainThreadRunner()
+    ) {
+        self.pasteboard = pasteboard
+        self.eventSender = eventSender
+        self.sleeper = sleeper
+        self.logger = logger
+        self.mainThread = mainThread
+    }
+
     func copyToClipboard(text: String) {
-        let pasteboard = NSPasteboard.general
-        pasteboard.clearContents()
-        pasteboard.setString(text, forType: .string)
+        pasteboard.copy(text: text)
     }
 
     func paste(text: String, mode: PasteMode) {
+        let snapshot = pasteboard.snapshot()
+        let preChangeCount = pasteboard.changeCount
         copyToClipboard(text: text)
         switch mode {
         case .cmdV:
-            sendPaste(modifier: .maskCommand)
+            eventSender.sendPaste(modifier: .maskCommand)
         case .ctrlV:
-            sendPaste(modifier: .maskControl)
+            eventSender.sendPaste(modifier: .maskControl)
         case .type:
             typeString(text)
         }
-        Log.paste.info("Paste action executed")
+        restoreClipboardIfNeeded(snapshot: snapshot, preChangeCount: preChangeCount)
+        logger.logPasteExecuted()
     }
 
-    private func sendPaste(modifier: CGEventFlags) {
-        let keyV = CGKeyCode(kVK_ANSI_V)
-        let source = CGEventSource(stateID: .combinedSessionState)
-        let keyDown = CGEvent(keyboardEventSource: source, virtualKey: keyV, keyDown: true)
-        keyDown?.flags = modifier
-        let keyUp = CGEvent(keyboardEventSource: source, virtualKey: keyV, keyDown: false)
-        keyUp?.flags = modifier
-        keyDown?.post(tap: .cghidEventTap)
-        keyUp?.post(tap: .cghidEventTap)
-    }
-
-    private func typeString(_ text: String) {
-        let source = CGEventSource(stateID: .combinedSessionState)
-        for char in text {
-            if char == "\n" {
-                sendKey(code: CGKeyCode(kVK_Return), shift: false, source: source)
-                usleep(20000)
-                continue
-            }
-            if let mapping = keyCodeForCharacter(char) {
-                sendKey(code: mapping.code, shift: mapping.shift, source: source)
-            } else {
-                sendKey(code: CGKeyCode(kVK_ANSI_Slash), shift: true, source: source)
-            }
-            usleep(20000)
+    private func restoreClipboardIfNeeded(snapshot: PasteboardSnapshot, preChangeCount: Int) {
+        mainThread.runAfter(seconds: 0.25) { [pasteboard, preChangeCount, snapshot] in
+            if pasteboard.changeCount != preChangeCount + 1 { return }
+            pasteboard.restore(snapshot)
         }
     }
 
-    private func sendKey(code: CGKeyCode, shift: Bool, source: CGEventSource?) {
-        let keyDown = CGEvent(keyboardEventSource: source, virtualKey: code, keyDown: true)
-        if shift { keyDown?.flags = .maskShift }
-        let keyUp = CGEvent(keyboardEventSource: source, virtualKey: code, keyDown: false)
-        if shift { keyUp?.flags = .maskShift }
-        keyDown?.post(tap: .cghidEventTap)
-        keyUp?.post(tap: .cghidEventTap)
+    private func typeString(_ text: String) {
+        for char in text {
+            if char == "\n" {
+                eventSender.sendKey(code: CGKeyCode(kVK_Return), shift: false)
+                sleeper.sleep(microseconds: 20000)
+                continue
+            }
+            if let mapping = keyCodeForCharacter(char) {
+                eventSender.sendKey(code: mapping.code, shift: mapping.shift)
+            } else {
+                eventSender.sendKey(code: CGKeyCode(kVK_ANSI_Slash), shift: true)
+            }
+            sleeper.sleep(microseconds: 20000)
+        }
     }
 
     private func keyCodeForCharacter(_ char: Character) -> (code: CGKeyCode, shift: Bool)? {

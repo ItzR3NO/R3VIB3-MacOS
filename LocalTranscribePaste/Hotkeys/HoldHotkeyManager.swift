@@ -11,6 +11,12 @@ final class HoldHotkeyManager {
     var onHoldEnd: (() -> Void)?
     var onPasteKeystroke: ((UInt32, CGEventFlags) -> Void)?
 
+    private let accessibilityAccess: AccessibilityAccessProviding
+    private let eventTapFactory: EventTapCreating
+    private let runLoop: RunLoopScheduling
+    private let logger: HotkeyLogging
+    private let mainThread: MainThreadRunning
+
     private var toggleHotkey: Hotkey = .defaultToggle
     private var pasteHotkey: Hotkey = .defaultPaste
     private var holdHotkey: Hotkey = .defaultHold
@@ -18,8 +24,22 @@ final class HoldHotkeyManager {
     private var runLoopSource: CFRunLoopSource?
     private var pressed: Set<HotkeyKind> = []
     private var fnOnlyActive = false
+    private var fnOnlyWorkItem: DispatchWorkItem?
+    private var lastFlags: CGEventFlags = []
 
-    private init() {}
+    init(
+        accessibilityAccess: AccessibilityAccessProviding = SystemAccessibilityAccess(),
+        eventTapFactory: EventTapCreating = SystemEventTapFactory(),
+        runLoop: RunLoopScheduling = CoreRunLoopScheduler(),
+        logger: HotkeyLogging = DefaultHotkeyLogger(),
+        mainThread: MainThreadRunning = MainThreadRunner()
+    ) {
+        self.accessibilityAccess = accessibilityAccess
+        self.eventTapFactory = eventTapFactory
+        self.runLoop = runLoop
+        self.logger = logger
+        self.mainThread = mainThread
+    }
 
     func updateHotkeys(toggle: Hotkey, paste: Hotkey, hold: Hotkey) {
         toggleHotkey = toggle
@@ -41,10 +61,9 @@ final class HoldHotkeyManager {
 
     func start() {
         guard eventTap == nil else { return }
-        if !AXIsProcessTrusted() {
-            let options = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: true] as CFDictionary
-            _ = AXIsProcessTrustedWithOptions(options)
-            Log.hotkeys.warning("Accessibility not trusted; prompted user")
+        if !accessibilityAccess.isTrusted {
+            _ = accessibilityAccess.requestAccessPrompt()
+            logger.logAccessibilityPrompt()
             return
         }
         let mask = (1 << CGEventType.keyDown.rawValue)
@@ -56,22 +75,17 @@ final class HoldHotkeyManager {
             return manager.handleEvent(type: type, event: event)
         }
         let userInfo = Unmanaged.passUnretained(self).toOpaque()
-        guard let tap = CGEvent.tapCreate(tap: .cgSessionEventTap,
-                                          place: .headInsertEventTap,
-                                          options: .listenOnly,
-                                          eventsOfInterest: CGEventMask(mask),
-                                          callback: callback,
-                                          userInfo: userInfo) else {
-            Log.hotkeys.error("Failed to create event tap for hold hotkey")
+        guard let tap = eventTapFactory.makeTap(mask: CGEventMask(mask), callback: callback, userInfo: userInfo) else {
+            logger.logEventTapFailed()
             return
         }
         eventTap = tap
-        runLoopSource = CFMachPortCreateRunLoopSource(kCFAllocatorDefault, tap, 0)
+        runLoopSource = runLoop.createSource(for: tap)
         if let runLoopSource = runLoopSource {
-            CFRunLoopAddSource(CFRunLoopGetCurrent(), runLoopSource, .commonModes)
+            runLoop.add(source: runLoopSource)
         }
-        CGEvent.tapEnable(tap: tap, enable: true)
-        Log.hotkeys.info("Hold hotkey monitoring enabled")
+        runLoop.enableTap(tap)
+        logger.logHoldHotkeyEnabled()
     }
 
     func restartIfNeeded() {
@@ -81,14 +95,18 @@ final class HoldHotkeyManager {
 
     private func handleEvent(type: CGEventType, event: CGEvent) -> Unmanaged<CGEvent> {
         if type == .flagsChanged {
+            lastFlags = event.flags
             handleFunctionOnly(flags: event.flags)
             return Unmanaged.passUnretained(event)
         }
         guard type == .keyDown || type == .keyUp else {
             return Unmanaged.passUnretained(event)
         }
+        if type == .keyDown {
+            cancelFnOnlyActions()
+        }
         let keyCode = UInt32(event.getIntegerValueField(.keyboardEventKeycode))
-        let flags = event.flags
+        let flags = event.flags.union(lastFlags)
         onPasteKeystroke?(keyCode, flags)
 
         if matches(hotkey: holdHotkey, keyCode: keyCode, flags: flags) {
@@ -145,27 +163,60 @@ final class HoldHotkeyManager {
 
         if holdHotkey.isFunctionOnly {
             if eligible {
-                handle(kind: .hold, type: .keyDown) { self.onHoldStart?() }
+                scheduleFnOnlyActions()
             } else {
-                handle(kind: .hold, type: .keyUp) { self.onHoldEnd?() }
+                cancelFnOnlyActions()
+                if pressed.contains(.hold) {
+                    handle(kind: .hold, type: .keyUp) { self.onHoldEnd?() }
+                } else {
+                    pressed.remove(.hold)
+                }
             }
         }
 
         if toggleHotkey.isFunctionOnly, toggleHotkey.requiresEventTap {
             if eligible {
-                handle(kind: .toggle, type: .keyDown) { self.onToggle?() }
+                scheduleFnOnlyActions()
             } else {
+                cancelFnOnlyActions()
                 pressed.remove(.toggle)
             }
         }
 
         if pasteHotkey.isFunctionOnly, pasteHotkey.requiresEventTap {
             if eligible {
-                handle(kind: .paste, type: .keyDown) { self.onPaste?() }
+                scheduleFnOnlyActions()
             } else {
+                cancelFnOnlyActions()
                 pressed.remove(.paste)
             }
         }
+    }
+
+    private func scheduleFnOnlyActions() {
+        cancelFnOnlyActions()
+        let workItem = DispatchWorkItem { [weak self] in
+            guard let self = self, self.fnOnlyActive else { return }
+            if self.holdHotkey.isFunctionOnly {
+                self.handle(kind: .hold, type: .keyDown) { self.onHoldStart?() }
+            }
+            if self.toggleHotkey.isFunctionOnly, self.toggleHotkey.requiresEventTap {
+                self.handle(kind: .toggle, type: .keyDown) { self.onToggle?() }
+            }
+            if self.pasteHotkey.isFunctionOnly, self.pasteHotkey.requiresEventTap {
+                self.handle(kind: .paste, type: .keyDown) { self.onPaste?() }
+            }
+        }
+        fnOnlyWorkItem = workItem
+        mainThread.runAfter(seconds: 0.2) {
+            if workItem.isCancelled { return }
+            workItem.perform()
+        }
+    }
+
+    private func cancelFnOnlyActions() {
+        fnOnlyWorkItem?.cancel()
+        fnOnlyWorkItem = nil
     }
 
     private func handle(kind: HotkeyKind, type: CGEventType, action: @escaping () -> Void) {
@@ -173,10 +224,10 @@ final class HoldHotkeyManager {
         case .keyDown:
             guard !pressed.contains(kind) else { return }
             pressed.insert(kind)
-            DispatchQueue.main.async { action() }
+            mainThread.run { action() }
         case .keyUp:
             pressed.remove(kind)
-            DispatchQueue.main.async { action() }
+            mainThread.run { action() }
         default:
             break
         }

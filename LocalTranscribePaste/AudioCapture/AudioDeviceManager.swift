@@ -186,3 +186,38 @@ enum AudioDeviceManager {
         return transportType == kAudioDeviceTransportTypeBuiltIn
     }
 }
+
+protocol AudioDeviceProviding {
+    func inputDevices() -> [AudioInputDevice]
+    func defaultInputDeviceID() -> AudioDeviceID?
+    func deviceID(forUID uid: String) -> AudioDeviceID?
+    func builtInMicrophoneDeviceID() -> AudioDeviceID?
+    func deviceUID(deviceID: AudioDeviceID) -> String?
+    func inputChannelCount(deviceID: AudioDeviceID) -> Int
+}
+
+struct SystemAudioDeviceProvider: AudioDeviceProviding {
+    func inputDevices() -> [AudioInputDevice] {
+        AudioDeviceManager.inputDevices()
+    }
+
+    func defaultInputDeviceID() -> AudioDeviceID? {
+        AudioDeviceManager.defaultInputDeviceID()
+    }
+
+    func deviceID(forUID uid: String) -> AudioDeviceID? {
+        AudioDeviceManager.deviceID(forUID: uid)
+    }
+
+    func builtInMicrophoneDeviceID() -> AudioDeviceID? {
+        AudioDeviceManager.builtInMicrophoneDeviceID()
+    }
+
+    func deviceUID(deviceID: AudioDeviceID) -> String? {
+        AudioDeviceManager.deviceUID(deviceID: deviceID)
+    }
+
+    func inputChannelCount(deviceID: AudioDeviceID) -> Int {
+        AudioDeviceManager.inputChannelCount(deviceID: deviceID)
+    }
+}

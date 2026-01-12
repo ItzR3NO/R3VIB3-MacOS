@@ -2,26 +2,46 @@ import Foundation
 import AVFoundation
 
 final class AudioCaptureManager {
+    private let fileSystem: FileSystem
+    private let uuidProvider: UUIDProviding
+    private let recorderFactory: AudioRecorderFactory
+    private let audioFileReader: AudioFileReading
+    private let logger: AudioCaptureLogging
+
     private var recorder: AVAudioRecorder?
     private var recordingURL: URL?
     private var isRecording = false
 
+    init(
+        fileSystem: FileSystem = SystemFileSystem(),
+        uuidProvider: UUIDProviding = SystemUUIDProvider(),
+        recorderFactory: AudioRecorderFactory = AVAudioRecorderFactory(),
+        audioFileReader: AudioFileReading = SystemAudioFileReader(),
+        logger: AudioCaptureLogging = DefaultAudioCaptureLogger()
+    ) {
+        self.fileSystem = fileSystem
+        self.uuidProvider = uuidProvider
+        self.recorderFactory = recorderFactory
+        self.audioFileReader = audioFileReader
+        self.logger = logger
+    }
+
     func startRecording(preferredDeviceUID: String?, preferredChannelIndex: Int) throws {
         guard !isRecording else { return }
 
-        let tempURL = FileManager.default.temporaryDirectory
-            .appendingPathComponent("ltp_recording_\(UUID().uuidString).caf")
+        let tempURL = fileSystem.temporaryDirectory
+            .appendingPathComponent("ltp_recording_\(uuidProvider.makeUUID().uuidString).caf")
         recordingURL = tempURL
 
         do {
             try startRecorder(at: tempURL, sampleRate: 44100)
         } catch {
-            Log.audio.error("Recorder start failed at 44.1k: \(String(describing: error), privacy: .public)")
+            logger.logRecorderStartFailed(sampleRate: 44100, error: error)
             try startRecorder(at: tempURL, sampleRate: 48000)
         }
 
         isRecording = true
-        Log.audio.info("Recording start (AVAudioRecorder). url=\(tempURL.path, privacy: .public)")
+        logger.logRecordingStart(url: tempURL)
     }
 
     func stopRecording() throws -> URL {
@@ -33,21 +53,22 @@ final class AudioCaptureManager {
             throw AudioCaptureError.missingRecording
         }
         recordingURL = nil
+
         do {
-            let file = try AVAudioFile(forReading: url)
-            let duration = Double(file.length) / file.processingFormat.sampleRate
-            Log.audio.info("Recording stop: frames=\(file.length, privacy: .public) dur=\(duration, privacy: .public)s")
+            let info = try audioFileReader.readInfo(url: url)
+            logger.logRecordingStop(frameLength: info.frameLength, duration: info.durationSeconds)
         } catch {
-            Log.audio.error("Failed to read recording: \(error.localizedDescription)")
+            logger.logRecordingReadFailed(error: error)
         }
+
         return url
     }
 }
 
 private extension AudioCaptureManager {
     func startRecorder(at url: URL, sampleRate: Double) throws {
-        if FileManager.default.fileExists(atPath: url.path) {
-            try? FileManager.default.removeItem(at: url)
+        if fileSystem.fileExists(atPath: url.path) {
+            try? fileSystem.removeItem(at: url)
         }
         let settings: [String: Any] = [
             AVFormatIDKey: kAudioFormatLinearPCM,
@@ -58,7 +79,7 @@ private extension AudioCaptureManager {
             AVLinearPCMIsFloatKey: false,
             AVLinearPCMIsNonInterleaved: false
         ]
-        let recorder = try AVAudioRecorder(url: url, settings: settings)
+        let recorder = try recorderFactory.makeRecorder(url: url, settings: settings)
         recorder.prepareToRecord()
         guard recorder.record() else {
             throw AudioCaptureError.recorderFailed

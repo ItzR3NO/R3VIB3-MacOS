@@ -79,6 +79,21 @@ struct SystemAccessibilityAccess: AccessibilityAccessProviding {
     }
 }
 
+protocol ScreenRecordingAccessProviding {
+    var isAuthorized: Bool { get }
+    func requestAccess() -> Bool
+}
+
+struct SystemScreenRecordingAccess: ScreenRecordingAccessProviding {
+    var isAuthorized: Bool {
+        CGPreflightScreenCaptureAccess()
+    }
+
+    func requestAccess() -> Bool {
+        CGRequestScreenCaptureAccess()
+    }
+}
+
 protocol AppActivating {
     func activate()
 }
@@ -91,6 +106,7 @@ struct SystemAppActivator: AppActivating {
 
 protocol SystemSettingsOpening {
     func openMicrophonePrivacy()
+    func openScreenRecordingPrivacy()
 }
 
 struct SystemSettingsOpener: SystemSettingsOpening {
@@ -106,14 +122,28 @@ struct SystemSettingsOpener: SystemSettingsOpening {
             NSWorkspace.shared.open(fallback)
         }
     }
+
+    func openScreenRecordingPrivacy() {
+        let appURL = URL(fileURLWithPath: "/System/Applications/System Settings.app")
+        let config = NSWorkspace.OpenConfiguration()
+        NSWorkspace.shared.openApplication(at: appURL, configuration: config) { _, _ in
+            if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture") {
+                NSWorkspace.shared.open(url)
+                return
+            }
+            let fallback = URL(fileURLWithPath: "/System/Library/PreferencePanes/Security.prefPane")
+            NSWorkspace.shared.open(fallback)
+        }
+    }
 }
 
 protocol PermissionsLogging {
     func logMicrophoneAccess(granted: Bool, source: String)
     func logAccessibilityPrompt(trusted: Bool)
+    func logScreenRecordingAccess(granted: Bool)
     func logTCCReset(service: String, bundleID: String, status: Int32)
     func logTCCResetFailed(service: String, bundleID: String, error: Error)
-    func logPermissionStatus(micAuthorized: Bool, captureStatus: String, avfaudioStatus: String, accessibilityAuthorized: Bool)
+    func logPermissionStatus(micAuthorized: Bool, captureStatus: String, avfaudioStatus: String, accessibilityAuthorized: Bool, screenRecordingAuthorized: Bool)
 }
 
 struct DefaultPermissionsLogger: PermissionsLogging {
@@ -125,6 +155,10 @@ struct DefaultPermissionsLogger: PermissionsLogging {
         Log.permissions.info("Accessibility permission prompt shown, trusted: \(trusted)")
     }
 
+    func logScreenRecordingAccess(granted: Bool) {
+        Log.permissions.info("Screen recording permission granted: \(granted)")
+    }
+
     func logTCCReset(service: String, bundleID: String, status: Int32) {
         Log.permissions.info("TCC reset \(service, privacy: .public) for \(bundleID, privacy: .public) status: \(status)")
     }
@@ -133,7 +167,7 @@ struct DefaultPermissionsLogger: PermissionsLogging {
         Log.permissions.error("TCC reset failed \(service, privacy: .public) for \(bundleID, privacy: .public): \(error.localizedDescription, privacy: .public)")
     }
 
-    func logPermissionStatus(micAuthorized: Bool, captureStatus: String, avfaudioStatus: String, accessibilityAuthorized: Bool) {
-        Log.permissions.info("Permission status - mic:\(micAuthorized) capture:\(captureStatus, privacy: .public) avfaudio:\(avfaudioStatus, privacy: .public) accessibility:\(accessibilityAuthorized)")
+    func logPermissionStatus(micAuthorized: Bool, captureStatus: String, avfaudioStatus: String, accessibilityAuthorized: Bool, screenRecordingAuthorized: Bool) {
+        Log.permissions.info("Permission status - mic:\(micAuthorized) capture:\(captureStatus, privacy: .public) avfaudio:\(avfaudioStatus, privacy: .public) accessibility:\(accessibilityAuthorized) screen:\(screenRecordingAuthorized)")
     }
 }

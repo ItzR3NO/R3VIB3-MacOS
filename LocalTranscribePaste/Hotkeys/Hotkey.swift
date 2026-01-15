@@ -26,6 +26,7 @@ struct Hotkey: Codable, Equatable {
     static let defaultToggle = Hotkey(keyCode: UInt32(kVK_Space), modifiers: UInt32(controlKey | optionKey))
     static let defaultPaste = Hotkey(keyCode: UInt32(kVK_ANSI_V), modifiers: UInt32(controlKey | optionKey))
     static let defaultHold = Hotkey(keyCode: UInt32(kVK_ANSI_R), modifiers: UInt32(controlKey | optionKey))
+    static let defaultScreenshot = Hotkey(keyCode: UInt32(kVK_ANSI_S), modifiers: UInt32(controlKey | optionKey))
 
     private enum CodingKeys: String, CodingKey {
         case keyCode

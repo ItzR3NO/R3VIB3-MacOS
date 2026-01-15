@@ -12,6 +12,7 @@ final class StatusBarController: NSObject {
     private var pasteItem: NSMenuItem?
     private var settingsWindow: SettingsWindowController?
     private var permissionsWindow: PermissionsWindowController?
+    private var screenshotClipboardWindow: ScreenshotClipboardWindowController?
 
     init(appState: AppState) {
         self.appState = appState
@@ -73,6 +74,15 @@ final class StatusBarController: NSObject {
         NSApp.activate(ignoringOtherApps: true)
     }
 
+    func showScreenshotClipboard() {
+        if screenshotClipboardWindow == nil {
+            if let appState = appState {
+                screenshotClipboardWindow = ScreenshotClipboardWindowController(appState: appState)
+            }
+        }
+        screenshotClipboardWindow?.show()
+    }
+
     private func setupStatusItem() {
         if let image = NSImage(named: "StatusIcon") {
             image.isTemplate = false
@@ -93,6 +103,14 @@ final class StatusBarController: NSObject {
         paste.target = self
         menu.addItem(paste)
         pasteItem = paste
+
+        let capture = NSMenuItem(title: "Capture window screenshot", action: #selector(captureScreenshot), keyEquivalent: "")
+        capture.target = self
+        menu.addItem(capture)
+
+        let clipboard = NSMenuItem(title: "Screenshot clipboard", action: #selector(showScreenshotClipboardPanel), keyEquivalent: "")
+        clipboard.target = self
+        menu.addItem(clipboard)
 
         menu.addItem(NSMenuItem.separator())
 
@@ -128,6 +146,14 @@ final class StatusBarController: NSObject {
 
     @objc private func pasteLast() {
         appState?.pasteLastTranscript()
+    }
+
+    @objc private func captureScreenshot() {
+        appState?.captureWindowScreenshot()
+    }
+
+    @objc private func showScreenshotClipboardPanel() {
+        showScreenshotClipboard()
     }
 
     @objc private func openSettings() {

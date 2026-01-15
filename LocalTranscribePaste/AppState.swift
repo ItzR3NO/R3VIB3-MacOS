@@ -3,6 +3,7 @@ import Combine
 import os
 import AppKit
 import Carbon
+import CoreGraphics
 
 final class AppState: ObservableObject {
     static let shared = AppState()
@@ -13,6 +14,7 @@ final class AppState: ObservableObject {
     @Published var lastAudioFileURL: URL?
     @Published var activeRecordingMode: RecordingMode = .none
     @Published var isPasteReady: Bool = false
+    @Published var screenshots: [ScreenshotItem] = []
 
     let settings: SettingsStore
     let permissions: PermissionsManaging
@@ -20,11 +22,16 @@ final class AppState: ObservableObject {
     private let audioCapture: AudioCapturing
     private let transcriptionManager: TranscriptionManaging
     private let pasteManager: PasteManaging
+    private let screenshotStore: ScreenshotStoring
+    private let screenshotSessionID: String
+    private let windowPickerFactory: () -> WindowPickerController
+    private var activeWindowPicker: WindowPickerController?
     private var hotkeyManager: HotkeyManaging
     private var holdHotkeyManager: HoldHotkeyManaging
     private let statusBarControllerFactory: (AppState) -> StatusBarControlling
     private let mainThread: MainThreadRunning
     private let notificationCenter: NotificationCenter
+    private let screenshotSessionStart: Date
 
     lazy var statusBarController: StatusBarControlling = statusBarControllerFactory(self)
 
@@ -36,6 +43,8 @@ final class AppState: ObservableObject {
         audioCapture: AudioCapturing = AudioCaptureManager(),
         transcriptionManager: TranscriptionManaging = TranscriptionManager(),
         pasteManager: PasteManaging = PasteManager(),
+        screenshotStore: ScreenshotStoring? = nil,
+        windowPickerFactory: @escaping () -> WindowPickerController = { WindowPickerController() },
         permissions: PermissionsManaging = PermissionsManager(),
         hotkeyManager: HotkeyManaging = HotkeyManager.shared,
         holdHotkeyManager: HoldHotkeyManaging = HoldHotkeyManager.shared,
@@ -47,14 +56,19 @@ final class AppState: ObservableObject {
         self.audioCapture = audioCapture
         self.transcriptionManager = transcriptionManager
         self.pasteManager = pasteManager
+        self.screenshotSessionID = UUID().uuidString
+        self.screenshotStore = screenshotStore ?? ScreenshotStore(sessionID: screenshotSessionID)
+        self.windowPickerFactory = windowPickerFactory
         self.permissions = permissions
         self.hotkeyManager = hotkeyManager
         self.holdHotkeyManager = holdHotkeyManager
         self.statusBarControllerFactory = statusBarControllerFactory
         self.mainThread = mainThread
         self.notificationCenter = notificationCenter
+        self.screenshotSessionStart = Date()
         configureHotkeys()
         observeSettings()
+        screenshots = loadSessionScreenshots()
     }
 
     func start() {
@@ -92,13 +106,19 @@ final class AppState: ObservableObject {
                 self.pasteLastTranscript()
             }
         }
+        holdHotkeyManager.onScreenshot = { [weak self] in
+            guard let self = self else { return }
+            if self.settings.screenshotHotkey.requiresEventTap {
+                self.captureWindowScreenshot()
+            }
+        }
         holdHotkeyManager.onHoldStart = { [weak self] in
             self?.startHoldRecording()
         }
         holdHotkeyManager.onHoldEnd = { [weak self] in
             self?.stopHoldRecording()
         }
-        holdHotkeyManager.updateHotkeys(toggle: settings.toggleHotkey, paste: settings.pasteHotkey, hold: settings.holdHotkey)
+        holdHotkeyManager.updateHotkeys(toggle: settings.toggleHotkey, paste: settings.pasteHotkey, hold: settings.holdHotkey, screenshot: settings.screenshotHotkey)
         holdHotkeyManager.start()
 
         hotkeyManager.onToggleDictation = { [weak self] in
@@ -111,6 +131,12 @@ final class AppState: ObservableObject {
             guard let self = self else { return }
             if !self.settings.pasteHotkey.requiresEventTap {
                 self.pasteLastTranscript()
+            }
+        }
+        hotkeyManager.onCaptureScreenshot = { [weak self] in
+            guard let self = self else { return }
+            if !self.settings.screenshotHotkey.requiresEventTap {
+                self.captureWindowScreenshot()
             }
         }
         updateCarbonHotkeys()
@@ -130,6 +156,11 @@ final class AppState: ObservableObject {
         settings.$holdHotkey.sink { hotkey in
             self.holdHotkeyManager.updateHoldHotkey(hotkey)
         }.store(in: &cancellables)
+
+        settings.$screenshotHotkey.sink { hotkey in
+            self.holdHotkeyManager.updateScreenshotHotkey(hotkey)
+            self.updateCarbonHotkeys()
+        }.store(in: &cancellables)
     }
 
     private func handlePasteKeystroke(keyCode: UInt32, flags: CGEventFlags) {
@@ -144,7 +175,8 @@ final class AppState: ObservableObject {
     private func updateCarbonHotkeys() {
         let toggle = settings.toggleHotkey.requiresEventTap ? nil : settings.toggleHotkey
         let paste = settings.pasteHotkey.requiresEventTap ? nil : settings.pasteHotkey
-        hotkeyManager.registerHotkeys(toggle: toggle, paste: paste)
+        let screenshot = settings.screenshotHotkey.requiresEventTap ? nil : settings.screenshotHotkey
+        hotkeyManager.registerHotkeys(toggle: toggle, paste: paste, screenshot: screenshot)
     }
 
     func toggleDictation() {
@@ -298,6 +330,40 @@ final class AppState: ObservableObject {
         statusBarController.clearPasteReadyIndicator()
     }
 
+    func captureWindowScreenshot() {
+        if !permissions.isScreenRecordingAuthorized {
+            statusBarController.showMessage("Enable Screen Recording to capture windows.")
+            permissions.requestScreenRecordingAccess()
+            statusBarController.showPermissions()
+            return
+        }
+        let picker = windowPickerFactory()
+        activeWindowPicker = picker
+        picker.beginSelection { [weak self] selection in
+            guard let self = self else { return }
+            self.activeWindowPicker = nil
+            guard let selection else { return }
+            if let _ = self.screenshotStore.capture(windowID: selection.windowID, screenFrameOverride: selection.screenFrame) {
+                self.screenshots = self.loadSessionScreenshots()
+                self.statusBarController.showScreenshotClipboard()
+            } else {
+                self.statusBarController.showMessage("Unable to capture window")
+            }
+        }
+    }
+
+    func deleteScreenshot(_ item: ScreenshotItem) {
+        screenshotStore.delete(item)
+        screenshots = loadSessionScreenshots()
+    }
+
+    func deleteScreenshots(_ items: [ScreenshotItem]) {
+        for item in items {
+            screenshotStore.delete(item)
+        }
+        screenshots = loadSessionScreenshots()
+    }
+
     func copyLastTranscript() {
         guard !lastTranscript.isEmpty else { return }
         pasteManager.copyToClipboard(text: lastTranscript)
@@ -326,6 +392,15 @@ final class AppState: ObservableObject {
             }
         }
         return "Transcription failed"
+    }
+
+    private func loadSessionScreenshots() -> [ScreenshotItem] {
+        screenshotStore.load().filter { item in
+            if let itemSessionID = item.sessionID {
+                return itemSessionID == screenshotSessionID
+            }
+            return item.createdAt >= screenshotSessionStart
+        }
     }
 }
 

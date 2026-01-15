@@ -6,6 +6,7 @@ struct PermissionsView: View {
     private let bundle: BundleProviding
     @State private var micAuthorized: Bool
     @State private var accessibilityAuthorized: Bool
+    @State private var screenRecordingAuthorized: Bool
     @State private var micStatus: MicrophoneAuthorizationStatus
 
     init(
@@ -18,6 +19,7 @@ struct PermissionsView: View {
         self.bundle = bundle
         _micAuthorized = State(initialValue: permissions.isMicrophoneAuthorized)
         _accessibilityAuthorized = State(initialValue: permissions.isAccessibilityAuthorized)
+        _screenRecordingAuthorized = State(initialValue: permissions.isScreenRecordingAuthorized)
         _micStatus = State(initialValue: permissions.microphoneStatus)
     }
 
@@ -49,6 +51,7 @@ struct PermissionsView: View {
         Section("Permissions status") {
             statusRow(title: "Microphone", isAuthorized: micAuthorized)
             statusRow(title: "Accessibility", isAuthorized: accessibilityAuthorized)
+            statusRow(title: "Screen Recording", isAuthorized: screenRecordingAuthorized)
         }
     }
 
@@ -66,6 +69,13 @@ struct PermissionsView: View {
                 permissions.requestAccessibilityAccess()
                 refresh()
             }
+            Button("Request Screen Recording Permission") {
+                permissions.requestScreenRecordingAccess()
+                refresh()
+                if !permissions.isScreenRecordingAuthorized {
+                    permissions.openScreenRecordingSettings()
+                }
+            }
             Button("Refresh Status") {
                 refresh()
             }
@@ -76,6 +86,7 @@ struct PermissionsView: View {
         Section("How to enable") {
             Text("System Settings > Privacy & Security > Microphone")
             Text("System Settings > Privacy & Security > Accessibility")
+            Text("System Settings > Privacy & Security > Screen Recording")
             Text("If R3VIB3 is missing or stuck, remove it and re-add in Accessibility.")
             Text("Enable R3VIB3, then restart the app if needed.")
             if let bundleID = bundle.bundleIdentifier {
@@ -89,6 +100,7 @@ struct PermissionsView: View {
     private func refresh() {
         micAuthorized = permissions.isMicrophoneAuthorized
         accessibilityAuthorized = permissions.isAccessibilityAuthorized
+        screenRecordingAuthorized = permissions.isScreenRecordingAuthorized
         micStatus = permissions.microphoneStatus
         permissions.logCurrentStatus()
         if accessibilityAuthorized {

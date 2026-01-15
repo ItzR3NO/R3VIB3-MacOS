@@ -9,6 +9,7 @@ final class HoldHotkeyManager {
     var onPaste: (() -> Void)?
     var onHoldStart: (() -> Void)?
     var onHoldEnd: (() -> Void)?
+    var onScreenshot: (() -> Void)?
     var onPasteKeystroke: ((UInt32, CGEventFlags) -> Void)?
 
     private let accessibilityAccess: AccessibilityAccessProviding
@@ -20,6 +21,7 @@ final class HoldHotkeyManager {
     private var toggleHotkey: Hotkey = .defaultToggle
     private var pasteHotkey: Hotkey = .defaultPaste
     private var holdHotkey: Hotkey = .defaultHold
+    private var screenshotHotkey: Hotkey = .defaultScreenshot
     private var eventTap: CFMachPort?
     private var runLoopSource: CFRunLoopSource?
     private var pressed: Set<HotkeyKind> = []
@@ -41,10 +43,11 @@ final class HoldHotkeyManager {
         self.mainThread = mainThread
     }
 
-    func updateHotkeys(toggle: Hotkey, paste: Hotkey, hold: Hotkey) {
+    func updateHotkeys(toggle: Hotkey, paste: Hotkey, hold: Hotkey, screenshot: Hotkey) {
         toggleHotkey = toggle
         pasteHotkey = paste
         holdHotkey = hold
+        screenshotHotkey = screenshot
     }
 
     func updateHoldHotkey(_ hotkey: Hotkey) {
@@ -57,6 +60,10 @@ final class HoldHotkeyManager {
 
     func updatePasteHotkey(_ hotkey: Hotkey) {
         pasteHotkey = hotkey
+    }
+
+    func updateScreenshotHotkey(_ hotkey: Hotkey) {
+        screenshotHotkey = hotkey
     }
 
     func start() {
@@ -141,6 +148,17 @@ final class HoldHotkeyManager {
             }
             return Unmanaged.passUnretained(event)
         }
+
+        if screenshotHotkey.requiresEventTap, matches(hotkey: screenshotHotkey, keyCode: keyCode, flags: flags) {
+            if type == .keyDown {
+                handle(kind: .screenshot, type: type) {
+                    self.onScreenshot?()
+                }
+            } else {
+                pressed.remove(.screenshot)
+            }
+            return Unmanaged.passUnretained(event)
+        }
         return Unmanaged.passUnretained(event)
     }
 
@@ -191,6 +209,15 @@ final class HoldHotkeyManager {
                 pressed.remove(.paste)
             }
         }
+
+        if screenshotHotkey.isFunctionOnly, screenshotHotkey.requiresEventTap {
+            if eligible {
+                scheduleFnOnlyActions()
+            } else {
+                cancelFnOnlyActions()
+                pressed.remove(.screenshot)
+            }
+        }
     }
 
     private func scheduleFnOnlyActions() {
@@ -205,6 +232,9 @@ final class HoldHotkeyManager {
             }
             if self.pasteHotkey.isFunctionOnly, self.pasteHotkey.requiresEventTap {
                 self.handle(kind: .paste, type: .keyDown) { self.onPaste?() }
+            }
+            if self.screenshotHotkey.isFunctionOnly, self.screenshotHotkey.requiresEventTap {
+                self.handle(kind: .screenshot, type: .keyDown) { self.onScreenshot?() }
             }
         }
         fnOnlyWorkItem = workItem
@@ -251,4 +281,5 @@ private enum HotkeyKind: Hashable {
     case toggle
     case paste
     case hold
+    case screenshot
 }

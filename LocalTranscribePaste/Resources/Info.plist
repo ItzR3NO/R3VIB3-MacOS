@@ -24,7 +24,9 @@
   <string>1</string>
   <key>LSUIElement</key>
   <true/>
-  <key>NSMicrophoneUsageDescription</key>
-  <string>R3VIB3 needs microphone access to record dictation audio.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>R3VIB3 needs microphone access to record dictation audio.</string>
+	<key>NSScreenCaptureUsageDescription</key>
+	<string>R3VIB3 needs screen recording access to capture window screenshots.</string>
 </dict>
 </plist>

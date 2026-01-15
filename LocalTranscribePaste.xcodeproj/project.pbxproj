@@ -42,6 +42,11 @@
 		000000000000000000000136 /* HotkeySupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000236 /* HotkeySupport.swift */; };
 		000000000000000000000137 /* AppProtocols.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000238 /* AppProtocols.swift */; };
 		000000000000000000000138 /* WhisperTranscriptParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000239 /* WhisperTranscriptParser.swift */; };
+		000000000000000000000140 /* ScreenshotStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000240 /* ScreenshotStore.swift */; };
+		000000000000000000000141 /* WindowPickerController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000241 /* WindowPickerController.swift */; };
+		000000000000000000000142 /* ScreenshotClipboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000242 /* ScreenshotClipboardView.swift */; };
+		000000000000000000000143 /* ScreenshotClipboardWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000243 /* ScreenshotClipboardWindowController.swift */; };
+		000000000000000000000144 /* DragSourceOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000244 /* DragSourceOverlay.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -83,6 +88,11 @@
 		000000000000000000000237 /* Shared */ = {isa = PBXGroup; children = ( 000000000000000000000230 /* SystemServices.swift */, 000000000000000000000238 /* AppProtocols.swift */, ); path = Shared; sourceTree = "<group>"; };
 		000000000000000000000238 /* AppProtocols.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppProtocols.swift; sourceTree = "<group>"; };
 		000000000000000000000239 /* WhisperTranscriptParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WhisperTranscriptParser.swift; sourceTree = "<group>"; };
+		000000000000000000000240 /* ScreenshotStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenshotStore.swift; sourceTree = "<group>"; };
+		000000000000000000000241 /* WindowPickerController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowPickerController.swift; sourceTree = "<group>"; };
+		000000000000000000000242 /* ScreenshotClipboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenshotClipboardView.swift; sourceTree = "<group>"; };
+		000000000000000000000243 /* ScreenshotClipboardWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenshotClipboardWindowController.swift; sourceTree = "<group>"; };
+		000000000000000000000244 /* DragSourceOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DragSourceOverlay.swift; sourceTree = "<group>"; };
 		000000000000000000000600 /* R3VIB3.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; path = R3VIB3.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -109,6 +119,7 @@
 				000000000000000000000400 /* AudioCapture */,
 				000000000000000000000401 /* Transcription */,
 				000000000000000000000402 /* Hotkeys */,
+				000000000000000000000407 /* Screenshots */,
 				000000000000000000000403 /* Paste */,
 				000000000000000000000404 /* Permissions */,
 				000000000000000000000405 /* UI */,
@@ -152,6 +163,15 @@
 			path = Hotkeys;
 			sourceTree = "<group>";
 		};
+		000000000000000000000407 /* Screenshots */ = {
+			isa = PBXGroup;
+			children = (
+				000000000000000000000240 /* ScreenshotStore.swift */,
+				000000000000000000000241 /* WindowPickerController.swift */,
+			);
+			path = Screenshots;
+			sourceTree = "<group>";
+		};
 		000000000000000000000403 /* Paste */ = {
 			isa = PBXGroup;
 			children = (
@@ -182,6 +202,9 @@
 				000000000000000000000013 /* HotkeyRecorderView.swift */,
 				000000000000000000000019 /* RecordingIndicatorView.swift */,
 				00000000000000000000001A /* RecordingIndicatorWindowController.swift */,
+				000000000000000000000242 /* ScreenshotClipboardView.swift */,
+				000000000000000000000243 /* ScreenshotClipboardWindowController.swift */,
+				000000000000000000000244 /* DragSourceOverlay.swift */,
 			);
 			path = UI;
 			sourceTree = "<group>";
@@ -316,6 +339,8 @@
 				00000000000000000000010B /* HotkeyManager.swift in Sources */,
 				000000000000000000000116 /* HoldHotkeyManager.swift in Sources */,
 				000000000000000000000136 /* HotkeySupport.swift in Sources */,
+				000000000000000000000140 /* ScreenshotStore.swift in Sources */,
+				000000000000000000000141 /* WindowPickerController.swift in Sources */,
 				00000000000000000000010C /* PasteManager.swift in Sources */,
 				000000000000000000000132 /* PasteSupport.swift in Sources */,
 				00000000000000000000010D /* PermissionsManager.swift in Sources */,
@@ -329,6 +354,9 @@
 				000000000000000000000113 /* HotkeyRecorderView.swift in Sources */,
 				000000000000000000000117 /* RecordingIndicatorView.swift in Sources */,
 				000000000000000000000118 /* RecordingIndicatorWindowController.swift in Sources */,
+				000000000000000000000142 /* ScreenshotClipboardView.swift in Sources */,
+				000000000000000000000143 /* ScreenshotClipboardWindowController.swift in Sources */,
+				000000000000000000000144 /* DragSourceOverlay.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -18,10 +18,13 @@ protocol PasteManaging {
 protocol PermissionsManaging {
     var isMicrophoneAuthorized: Bool { get }
     var isAccessibilityAuthorized: Bool { get }
+    var isScreenRecordingAuthorized: Bool { get }
     var microphoneStatus: MicrophoneAuthorizationStatus { get }
     func requestMicrophoneAccess(completion: @escaping (Bool) -> Void)
     func openMicrophoneSettings()
     func requestAccessibilityAccess()
+    func requestScreenRecordingAccess()
+    func openScreenRecordingSettings()
     func resetAccessibilityPermissionIfNeeded()
     func logCurrentStatus()
 }
@@ -34,12 +37,14 @@ protocol StatusBarControlling {
     func showMessage(_ message: String)
     func showPermissions()
     func showSettings()
+    func showScreenshotClipboard()
 }
 
 protocol HotkeyManaging {
     var onToggleDictation: (() -> Void)? { get set }
     var onPasteLastTranscript: (() -> Void)? { get set }
-    func registerHotkeys(toggle: Hotkey?, paste: Hotkey?)
+    var onCaptureScreenshot: (() -> Void)? { get set }
+    func registerHotkeys(toggle: Hotkey?, paste: Hotkey?, screenshot: Hotkey?)
 }
 
 protocol HoldHotkeyManaging {
@@ -47,11 +52,13 @@ protocol HoldHotkeyManaging {
     var onPaste: (() -> Void)? { get set }
     var onHoldStart: (() -> Void)? { get set }
     var onHoldEnd: (() -> Void)? { get set }
+    var onScreenshot: (() -> Void)? { get set }
     var onPasteKeystroke: ((UInt32, CGEventFlags) -> Void)? { get set }
-    func updateHotkeys(toggle: Hotkey, paste: Hotkey, hold: Hotkey)
+    func updateHotkeys(toggle: Hotkey, paste: Hotkey, hold: Hotkey, screenshot: Hotkey)
     func updateHoldHotkey(_ hotkey: Hotkey)
     func updateToggleHotkey(_ hotkey: Hotkey)
     func updatePasteHotkey(_ hotkey: Hotkey)
+    func updateScreenshotHotkey(_ hotkey: Hotkey)
     func start()
     func restartIfNeeded()
 }

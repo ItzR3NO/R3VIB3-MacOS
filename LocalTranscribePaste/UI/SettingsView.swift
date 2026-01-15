@@ -166,6 +166,9 @@ struct SettingsView: View {
             labeledRow("Paste Last Transcript") {
                 HotkeyRecorderView(hotkey: $settings.pasteHotkey, permissions: permissions, statusBarController: statusBarController)
             }
+            labeledRow("Capture Window") {
+                HotkeyRecorderView(hotkey: $settings.screenshotHotkey, permissions: permissions, statusBarController: statusBarController)
+            }
         }
     }
 

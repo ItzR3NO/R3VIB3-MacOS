@@ -5,7 +5,7 @@
 Local-only macOS menu bar dictation app designed for seamless transcription across your local Mac and remote desktop sessions. Most dictation tools don’t paste reliably into RDP clients — R3VIB3 does.
 
 ## Build and run
-1. Open `LocalTranscribePaste/LocalTranscribePaste.xcodeproj` in Xcode.
+1. Open `LocalTranscribePaste.xcodeproj` in Xcode.
 2. Select the `LocalTranscribePaste` target (builds the R3VIB3 app).
 3. Build and run (Debug).
 
@@ -25,7 +25,7 @@ This project uses the whisper.cpp CLI binary (default engine) and keeps models i
 
 ### Whisper CLI binary
 Replace the placeholder file with the actual whisper.cpp CLI binary:
-- Source file path: `LocalTranscribePaste/LocalTranscribePaste/Resources/whisper/whisper-cli`
+- Source file path: `LocalTranscribePaste/Resources/whisper/whisper-cli`
 - Ensure the binary is **executable** (`chmod +x whisper-cli`).
 - Build a **universal** binary (Apple Silicon + Intel) and replace the placeholder.
 

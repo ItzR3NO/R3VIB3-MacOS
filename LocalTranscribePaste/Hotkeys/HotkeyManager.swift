@@ -6,10 +6,12 @@ final class HotkeyManager {
 
     var onToggleDictation: (() -> Void)?
     var onPasteLastTranscript: (() -> Void)?
+    var onCaptureScreenshot: (() -> Void)?
 
     private let mainThread: MainThreadRunning
     private var toggleRef: EventHotKeyRef?
     private var pasteRef: EventHotKeyRef?
+    private var screenshotRef: EventHotKeyRef?
     private var eventHandler: EventHandlerRef?
 
     private init(mainThread: MainThreadRunning = MainThreadRunner()) {
@@ -17,13 +19,16 @@ final class HotkeyManager {
         installHandler()
     }
 
-    func registerHotkeys(toggle: Hotkey?, paste: Hotkey?) {
+    func registerHotkeys(toggle: Hotkey?, paste: Hotkey?, screenshot: Hotkey?) {
         unregisterHotkeys()
         if let toggle = toggle {
             register(hotkey: toggle, id: HotkeyID.toggle, ref: &toggleRef)
         }
         if let paste = paste {
             register(hotkey: paste, id: HotkeyID.paste, ref: &pasteRef)
+        }
+        if let screenshot = screenshot {
+            register(hotkey: screenshot, id: HotkeyID.screenshot, ref: &screenshotRef)
         }
         Log.hotkeys.info("Registered hotkeys")
     }
@@ -39,8 +44,10 @@ final class HotkeyManager {
     private func unregisterHotkeys() {
         if let toggleRef { UnregisterEventHotKey(toggleRef) }
         if let pasteRef { UnregisterEventHotKey(pasteRef) }
+        if let screenshotRef { UnregisterEventHotKey(screenshotRef) }
         toggleRef = nil
         pasteRef = nil
+        screenshotRef = nil
     }
 
     private func installHandler() {
@@ -57,6 +64,8 @@ final class HotkeyManager {
                     manager.onToggleDictation?()
                 case .paste:
                     manager.onPasteLastTranscript?()
+                case .screenshot:
+                    manager.onCaptureScreenshot?()
                 case .none:
                     break
                 }
@@ -71,6 +80,7 @@ final class HotkeyManager {
 private enum HotkeyID: UInt32 {
     case toggle = 1
     case paste = 2
+    case screenshot = 3
 }
 
 private func fourCharCode(_ string: String) -> FourCharCode {

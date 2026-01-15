@@ -28,6 +28,10 @@ final class SettingsStore: ObservableObject {
         didSet { saveHotkey(holdHotkey, key: Keys.holdHotkey) }
     }
 
+    @Published var screenshotHotkey: Hotkey {
+        didSet { saveHotkey(screenshotHotkey, key: Keys.screenshotHotkey) }
+    }
+
     @Published var inputDeviceUID: String {
         didSet { saveInputDeviceUID() }
     }
@@ -63,6 +67,7 @@ final class SettingsStore: ObservableObject {
         toggleHotkey = SettingsStore.loadHotkey(key: Keys.toggleHotkey, defaults: defaults) ?? Hotkey.defaultToggle
         pasteHotkey = SettingsStore.loadHotkey(key: Keys.pasteHotkey, defaults: defaults) ?? Hotkey.defaultPaste
         holdHotkey = SettingsStore.loadHotkey(key: Keys.holdHotkey, defaults: defaults) ?? Hotkey.defaultHold
+        screenshotHotkey = SettingsStore.loadHotkey(key: Keys.screenshotHotkey, defaults: defaults) ?? Hotkey.defaultScreenshot
         inputDeviceUID = defaults.string(forKey: Keys.inputDeviceUID) ?? SettingsStore.defaultInputDeviceUID(deviceProvider: deviceProvider)
         inputChannelIndex = defaults.integer(forKey: Keys.inputChannelIndex)
         autoCopyOnTranscription = defaults.bool(forKey: Keys.autoCopyOnTranscription)
@@ -131,6 +136,7 @@ final class SettingsStore: ObservableObject {
         static let toggleHotkey = "toggleHotkey"
         static let pasteHotkey = "pasteHotkey"
         static let holdHotkey = "holdHotkey"
+        static let screenshotHotkey = "screenshotHotkey"
         static let inputDeviceUID = "inputDeviceUID"
         static let inputChannelIndex = "inputChannelIndex"
         static let autoCopyOnTranscription = "autoCopyOnTranscription"

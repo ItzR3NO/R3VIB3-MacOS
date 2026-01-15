@@ -14,6 +14,7 @@ enum MicrophoneAuthorizationStatus {
 final class PermissionsManager {
     private let microphoneAccess: MicrophoneAccessProviding
     private let accessibilityAccess: AccessibilityAccessProviding
+    private let screenRecordingAccess: ScreenRecordingAccessProviding
     private let appActivator: AppActivating
     private let systemSettings: SystemSettingsOpening
     private let bundle: BundleProviding
@@ -24,6 +25,7 @@ final class PermissionsManager {
     init(
         microphoneAccess: MicrophoneAccessProviding = SystemMicrophoneAccess(),
         accessibilityAccess: AccessibilityAccessProviding = SystemAccessibilityAccess(),
+        screenRecordingAccess: ScreenRecordingAccessProviding = SystemScreenRecordingAccess(),
         appActivator: AppActivating = SystemAppActivator(),
         systemSettings: SystemSettingsOpening = SystemSettingsOpener(),
         bundle: BundleProviding = MainBundleProvider(),
@@ -33,6 +35,7 @@ final class PermissionsManager {
     ) {
         self.microphoneAccess = microphoneAccess
         self.accessibilityAccess = accessibilityAccess
+        self.screenRecordingAccess = screenRecordingAccess
         self.appActivator = appActivator
         self.systemSettings = systemSettings
         self.bundle = bundle
@@ -51,6 +54,10 @@ final class PermissionsManager {
 
     var isAccessibilityAuthorized: Bool {
         accessibilityAccess.isTrusted
+    }
+
+    var isScreenRecordingAuthorized: Bool {
+        screenRecordingAccess.isAuthorized
     }
 
     func requestMicrophoneAccess(completion: @escaping (Bool) -> Void) {
@@ -77,6 +84,16 @@ final class PermissionsManager {
         logger.logAccessibilityPrompt(trusted: trusted)
     }
 
+    func requestScreenRecordingAccess() {
+        let granted = screenRecordingAccess.requestAccess()
+        logger.logScreenRecordingAccess(granted: granted)
+    }
+
+    func openScreenRecordingSettings() {
+        appActivator.activate()
+        systemSettings.openScreenRecordingPrivacy()
+    }
+
     func resetAccessibilityPermissionIfNeeded() {
         guard !isAccessibilityAuthorized else { return }
         guard let bundleID = bundle.bundleIdentifier else { return }
@@ -96,7 +113,8 @@ final class PermissionsManager {
             micAuthorized: isMicrophoneAuthorized,
             captureStatus: captureStatus,
             avfaudioStatus: audioStatus,
-            accessibilityAuthorized: isAccessibilityAuthorized
+            accessibilityAuthorized: isAccessibilityAuthorized,
+            screenRecordingAuthorized: isScreenRecordingAuthorized
         )
     }
 }

@@ -4,6 +4,11 @@
 
 Local-only macOS menu bar dictation app designed for seamless transcription across your local Mac and remote desktop sessions. Most dictation tools don’t paste reliably into RDP clients — R3VIB3 does.
 
+## What's new (1.01)
+- Prevents the top popover from lingering when recording starts.
+- Screenshot clipboard refresh: larger thumbnails, refined close button/drag hit area, smoother transitions.
+- FN-only hold hotkey triggers immediately.
+
 ## Build and run
 1. Open `LocalTranscribePaste.xcodeproj` in Xcode.
 2. Select the `LocalTranscribePaste` target (builds the R3VIB3 app).

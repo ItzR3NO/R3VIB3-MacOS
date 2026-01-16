@@ -27,6 +27,7 @@ struct DragSourceOverlay: NSViewRepresentable {
 }
 
 final class DragSourceOverlayView: NSView, NSDraggingSource {
+    private let closeButtonHitSize: CGFloat = 30
     var onTap: () -> Void = {}
     var dragItemsProvider: () -> [DragSourceItem] = { [] }
     var onDragEnded: (Bool) -> Void = { _ in }
@@ -41,6 +42,13 @@ final class DragSourceOverlayView: NSView, NSDraggingSource {
         super.init(coder: coder)
         wantsLayer = true
         layer?.backgroundColor = NSColor.clear.cgColor
+    }
+
+    override func hitTest(_ point: NSPoint) -> NSView? {
+        if closeButtonExclusionRect().contains(point) {
+            return nil
+        }
+        return super.hitTest(point)
     }
 
     override func mouseDown(with event: NSEvent) {
@@ -62,6 +70,11 @@ final class DragSourceOverlayView: NSView, NSDraggingSource {
                 break
             }
         }
+    }
+
+    private func closeButtonExclusionRect() -> CGRect {
+        let size = closeButtonHitSize
+        return CGRect(x: bounds.maxX - size, y: bounds.maxY - size, width: size, height: size)
     }
 
     private func startDragging(event: NSEvent) {

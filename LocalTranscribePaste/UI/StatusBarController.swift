@@ -25,6 +25,7 @@ final class StatusBarController: NSObject {
         statusItem.button?.appearsDisabled = isRecording
         toggleItem?.title = isRecording ? "Stop dictation" : "Start dictation"
         if isRecording {
+            popover.performClose(nil)
             indicatorMode = .recording
             recordingIndicator.show(mode: .recording)
         } else if indicatorMode == .recording {

@@ -6,7 +6,8 @@ final class ScreenshotClipboardWindowController: NSWindowController {
     private let model = ScreenshotStripModel()
     private var cancellable: AnyCancellable?
     private var latestItems: [ScreenshotItem] = []
-    private let thumbnailSize: CGFloat = ScreenshotStripLayout.thumbnailSize
+    private let thumbnailWidth: CGFloat = ScreenshotStripLayout.thumbnailWidth
+    private let thumbnailHeight: CGFloat = ScreenshotStripLayout.thumbnailHeight
     private let spacing: CGFloat = ScreenshotStripLayout.spacing
     private let padding: CGFloat = ScreenshotStripLayout.padding
     private let margin: CGFloat = ScreenshotStripLayout.margin
@@ -50,7 +51,13 @@ final class ScreenshotClipboardWindowController: NSWindowController {
         let ordered = items.sorted { $0.createdAt < $1.createdAt }
         let visibleCount = maxVisibleCount(for: screen)
         let visibleItems = Array(ordered.suffix(visibleCount))
-        model.items = visibleItems
+        if visibleItems.count > model.items.count {
+            withAnimation(.spring(response: 0.45, dampingFraction: 0.72)) {
+                model.items = visibleItems
+            }
+        } else {
+            model.items = visibleItems
+        }
 
         guard !visibleItems.isEmpty else {
             window?.orderOut(nil)
@@ -65,14 +72,14 @@ final class ScreenshotClipboardWindowController: NSWindowController {
 
     private func maxVisibleCount(for screen: NSScreen) -> Int {
         let availableWidth = screen.visibleFrame.width - (margin * 2)
-        let itemWidth = thumbnailSize + spacing
+        let itemWidth = thumbnailWidth + spacing
         let rawCount = Int((availableWidth + spacing) / max(itemWidth, 1))
         return max(rawCount, 1)
     }
 
     private func sizeForCount(_ count: Int) -> CGSize {
-        let width = (padding * 2) + (CGFloat(count) * thumbnailSize) + (CGFloat(max(count - 1, 0)) * spacing)
-        let height = (padding * 2) + thumbnailSize
+        let width = (padding * 2) + (CGFloat(count) * thumbnailWidth) + (CGFloat(max(count - 1, 0)) * spacing)
+        let height = (padding * 2) + thumbnailHeight
         return CGSize(width: width, height: height)
     }
 

@@ -176,12 +176,17 @@ final class HoldHotkeyManager {
         let fnPressed = flags.contains(.maskSecondaryFn)
         let otherModifiers = flags.intersection([.maskCommand, .maskShift, .maskAlternate, .maskControl])
         let eligible = fnPressed && otherModifiers.isEmpty
-        guard eligible != fnOnlyActive else { return }
+        if eligible == fnOnlyActive {
+            if eligible, holdHotkey.isFunctionOnly, !pressed.contains(.hold) {
+                handle(kind: .hold, type: .keyDown) { self.onHoldStart?() }
+            }
+            return
+        }
         fnOnlyActive = eligible
 
         if holdHotkey.isFunctionOnly {
             if eligible {
-                scheduleFnOnlyActions()
+                handle(kind: .hold, type: .keyDown) { self.onHoldStart?() }
             } else {
                 cancelFnOnlyActions()
                 if pressed.contains(.hold) {
@@ -224,9 +229,6 @@ final class HoldHotkeyManager {
         cancelFnOnlyActions()
         let workItem = DispatchWorkItem { [weak self] in
             guard let self = self, self.fnOnlyActive else { return }
-            if self.holdHotkey.isFunctionOnly {
-                self.handle(kind: .hold, type: .keyDown) { self.onHoldStart?() }
-            }
             if self.toggleHotkey.isFunctionOnly, self.toggleHotkey.requiresEventTap {
                 self.handle(kind: .toggle, type: .keyDown) { self.onToggle?() }
             }
